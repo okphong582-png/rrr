@@ -234,6 +234,10 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     });
 }
 
+- (void)updateLagState:(BOOL)isActive animated:(BOOL)animated {
+    [self updateButtonUIForLagState:isActive];
+}
+
 - (void)startPulseAnimation {
     [_pulseLayer removeAllAnimations];
     _pulseLayer.opacity = 1.0;

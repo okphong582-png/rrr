@@ -33,6 +33,7 @@ typedef NS_ENUM(NSInteger, FakeLagVPNState) {
 - (void)requestVPNPermissionWithCompletion:(void(^)(BOOL success, NSError * _Nullable error))completion;
 - (void)startVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion;
 - (void)stopVPN;
+- (void)stopVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion;
 - (void)toggleVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion;
 
 @end

@@ -203,6 +203,10 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
 }
 
 - (void)stopVPN {
+    [self stopVPNWithCompletion:nil];
+}
+
+- (void)stopVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion {
     if (self.tunnelManager && (self.tunnelManager.connection.status == NEVPNStatusConnected || self.tunnelManager.connection.status == NEVPNStatusConnecting)) {
         [self.tunnelManager.connection stopVPNTunnel];
     }
@@ -212,6 +216,12 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
     
     self.currentState = FakeLagVPNStateDisconnected;
     [self notifyStateChanged];
+    
+    if (completion) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(YES, nil);
+        });
+    }
 }
 
 - (void)toggleVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion {
