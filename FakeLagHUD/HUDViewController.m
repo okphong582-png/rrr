@@ -17,7 +17,6 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 @property (nonatomic, strong, readwrite) UIView *floatingContainer;
 @property (nonatomic, strong, readwrite) UIButton *fakelagButton;
 @property (nonatomic, strong) UILabel *statusLabel;
-@property (nonatomic, strong) CAShapeLayer *glowRingLayer;
 
 @end
 
@@ -40,38 +39,32 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 }
 
 - (void)setupFloatingButton {
-    CGFloat buttonSize = 66.0;
+    CGFloat buttonSize = 68.0;
     
-    // Container view for button + shadows + pulse ring
     _floatingContainer = [[UIView alloc] initWithFrame:CGRectMake(20, 120, buttonSize, buttonSize)];
     _floatingContainer.backgroundColor = [UIColor clearColor];
     _floatingContainer.clipsToBounds = NO;
     
-    // Pulse animation ring behind the button
     _pulseLayer = [CALayer layer];
-    _pulseLayer.frame = CGRectMake(-6, -6, buttonSize + 12, buttonSize + 12);
-    _pulseLayer.cornerRadius = (buttonSize + 12) / 2.0;
-    _pulseLayer.backgroundColor = [UIColor colorWithRed:0.0 green:0.90 blue:0.46 alpha:0.4].CGColor;
+    _pulseLayer.frame = CGRectMake(-8, -8, buttonSize + 16, buttonSize + 16);
+    _pulseLayer.cornerRadius = (buttonSize + 16) / 2.0;
+    _pulseLayer.backgroundColor = [UIColor colorWithRed:0.0 green:0.85 blue:1.0 alpha:0.4].CGColor;
     _pulseLayer.opacity = 0.0;
     [_floatingContainer.layer addSublayer:_pulseLayer];
     
-    // Main circular button
     _fakelagButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _fakelagButton.frame = CGRectMake(0, 0, buttonSize, buttonSize);
     _fakelagButton.layer.cornerRadius = buttonSize / 2.0;
     _fakelagButton.clipsToBounds = YES;
-    _fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0]; // Neon green
+    _fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0]; // Neon Green
     _fakelagButton.layer.borderWidth = 2.5;
-    _fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.85].CGColor;
+    _fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.9].CGColor;
     
-    // Button styling & label
-    [_fakelagButton setTitle:@"fakelag" forState:UIControlStateNormal];
-    [_fakelagButton setTitleColor:[UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0] forState:UIControlStateNormal];
-    _fakelagButton.titleLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightHeavy];
-    _fakelagButton.titleLabel.adjustsFontSizeToFitWidth = YES;
+    [_fakelagButton setTitle:@"FREEZE" forState:UIControlStateNormal];
+    [_fakelagButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
+    _fakelagButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightHeavy];
     _fakelagButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     
-    // Shadow on container
     _floatingContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.4 alpha:0.6].CGColor;
     _floatingContainer.layer.shadowOffset = CGSizeMake(0, 4);
     _floatingContainer.layer.shadowRadius = 8.0;
@@ -79,7 +72,6 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     
     [_fakelagButton addTarget:self action:@selector(handleButtonTap:) forControlEvents:UIControlEventTouchUpInside];
     
-    // Long press for extra options
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
     longPress.minimumPressDuration = 0.6;
     [_fakelagButton addGestureRecognizer:longPress];
@@ -106,12 +98,11 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
         center.x += translation.x;
         center.y += translation.y;
         
-        // Keep within screen bounds
         CGFloat radius = self.floatingContainer.bounds.size.width / 2.0;
         CGFloat minX = radius + 8;
         CGFloat maxX = self.view.bounds.size.width - radius - 8;
-        CGFloat minY = radius + 40; // Avoid top notch
-        CGFloat maxY = self.view.bounds.size.height - radius - 30; // Avoid home bar
+        CGFloat minY = radius + 40;
+        CGFloat maxY = self.view.bounds.size.height - radius - 30;
         
         center.x = MAX(minX, MIN(maxX, center.x));
         center.y = MAX(minY, MIN(maxY, center.y));
@@ -128,15 +119,14 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
             self.floatingContainer.transform = CGAffineTransformIdentity;
             self.floatingContainer.alpha = 1.0;
             
-            // Snap to nearest screen edge (left or right)
             CGPoint center = self.floatingContainer.center;
             CGFloat screenWidth = self.view.bounds.size.width;
             CGFloat radius = self.floatingContainer.bounds.size.width / 2.0;
             
             if (center.x < screenWidth / 2.0) {
-                center.x = radius + 12.0; // Snap left
+                center.x = radius + 12.0;
             } else {
-                center.x = screenWidth - radius - 12.0; // Snap right
+                center.x = screenWidth - radius - 12.0;
             }
             self.floatingContainer.center = center;
         } completion:^(BOOL finished) {
@@ -148,7 +138,6 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 - (void)handleButtonTap:(UIButton *)sender {
     [_feedbackGenerator impactOccurred];
     
-    // Scale bounce animation
     [UIView animateWithDuration:0.1 animations:^{
         sender.transform = CGAffineTransformMakeScale(0.88, 0.88);
     } completion:^(BOOL finished) {
@@ -157,7 +146,6 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
         }];
     }];
     
-    // Toggle VPN / Fake Lag
     __weak typeof(self) weakSelf = self;
     [[VPNManager sharedManager] toggleVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -169,29 +157,25 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
-        AudioServicesPlaySystemSound(1519); // Light vibration
+        AudioServicesPlaySystemSound(1519);
         
-        // Show subtle action alert / options
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"FakeLag Options"
-                                                                       message:@"Tùy chọn nhanh overlay"
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🧊 FakeLag Freeze Mode"
+                                                                       message:@"Tùy chọn chế độ"
                                                                 preferredStyle:UIAlertControllerStyleActionSheet];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"Đặt Lại Vị Trí Nút" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [alert addAction:[UIAlertAction actionWithTitle:@"Chuyển Đổi Chế Độ (Cycle Mode)" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [[PacketEngine sharedEngine] cycleNextMode];
+            [self refreshInitialState];
+        }]];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"Đặt Lại Vị Trí Nút Nổi" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             [UIView animateWithDuration:0.3 animations:^{
                 self.floatingContainer.center = CGPointMake(45, 150);
                 [self saveCurrentPosition];
             }];
         }]];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"Mở Ứng Dụng Chính" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            NSURL *url = [NSURL URLWithString:@"fakelag://"];
-            if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
-            }
-        }]];
-        
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
-        
         [self presentViewController:alert animated:YES completion:nil];
     }
 }
@@ -201,22 +185,22 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     
     void (^updateBlock)(void) = ^{
         if (isActive) {
-            // LAG ACTIVE: Radiant glowing Red / Orange
-            self.fakelagButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.12 blue:0.25 alpha:1.0];
-            [self.fakelagButton setTitle:@"LAG ON" forState:UIControlStateNormal];
+            // FREEZE ACTIVE: Glowing Ice Blue / Red Pulse
+            self.fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.67 blue:1.0 alpha:1.0];
+            [self.fakelagButton setTitle:@"FROZEN" forState:UIControlStateNormal];
             [self.fakelagButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            self.fakelagButton.layer.borderColor = [UIColor colorWithRed:1.0 green:0.8 blue:0.8 alpha:0.9].CGColor;
+            self.fakelagButton.layer.borderColor = [UIColor colorWithRed:0.7 green:0.9 blue:1.0 alpha:1.0].CGColor;
             
-            self.floatingContainer.layer.shadowColor = [UIColor colorWithRed:1.0 green:0.1 blue:0.2 alpha:0.9].CGColor;
+            self.floatingContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.7 blue:1.0 alpha:0.9].CGColor;
             self.floatingContainer.layer.shadowRadius = 14.0;
             
-            [self startPulseAnimationWithColor:[UIColor colorWithRed:1.0 green:0.1 blue:0.2 alpha:0.6]];
+            [self startPulseAnimationWithColor:[UIColor colorWithRed:0.0 green:0.67 blue:1.0 alpha:0.6]];
         } else {
-            // LAG IDLE: Neon Green
+            // IDLE: Neon Emerald Green
             self.fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0];
-            [self.fakelagButton setTitle:@"fakelag" forState:UIControlStateNormal];
-            [self.fakelagButton setTitleColor:[UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0] forState:UIControlStateNormal];
-            self.fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.85].CGColor;
+            [self.fakelagButton setTitle:@"FREEZE" forState:UIControlStateNormal];
+            [self.fakelagButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
+            self.fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.9].CGColor;
             
             self.floatingContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.4 alpha:0.6].CGColor;
             self.floatingContainer.layer.shadowRadius = 8.0;
@@ -239,15 +223,15 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     
     CABasicAnimation *scaleAnim = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
     scaleAnim.fromValue = @(0.9);
-    scaleAnim.toValue = @(1.35);
+    scaleAnim.toValue = @(1.4);
     
     CABasicAnimation *opacityAnim = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    opacityAnim.fromValue = @(0.7);
+    opacityAnim.fromValue = @(0.8);
     opacityAnim.toValue = @(0.0);
     
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = @[scaleAnim, opacityAnim];
-    group.duration = 1.2;
+    group.duration = 1.0;
     group.repeatCount = HUGE_VALF;
     group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
     
@@ -260,7 +244,6 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 }
 
 - (void)setupDarwinNotifications {
-    // Listen for VPN / Lag state changes across processes
     int status = notify_register_dispatch([FakeLagVPNStateChangedDarwinNotification UTF8String],
                                           &_notifyToken,
                                           dispatch_get_main_queue(),
