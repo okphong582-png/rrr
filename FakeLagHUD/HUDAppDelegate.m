@@ -10,7 +10,10 @@
     self.window.rootViewController = self.hudViewController;
     self.window.floatingButtonView = self.hudViewController.floatingContainer;
     
+    self.window.hidden = NO;
+    self.window.windowLevel = UIWindowLevelAlert + 1000000.0;
     [self.window makeKeyAndVisible];
+    
     return YES;
 }
 

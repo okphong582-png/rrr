@@ -1,5 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import "HUDWindow.h"
+#import "HUDViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -7,6 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly) BOOL isHUDRunning;
 @property (nonatomic, readonly) pid_t hudPid;
+@property (nonatomic, strong, nullable) HUDWindow *inAppHUDWindow;
+@property (nonatomic, strong, nullable) HUDViewController *inAppHUDVC;
 
 + (instancetype)sharedLauncher;
 

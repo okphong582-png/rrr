@@ -61,6 +61,11 @@ $CC $CFLAGS $FRAMEWORKS \
 
 cp "$ROOT_DIR/FakeLag/Info.plist" "$APP_DIR/Info.plist"
 
+# Gán quyền thực thi cho các file nhị phân
+chmod 755 "$APP_DIR/FakeLag"
+chmod 755 "$APP_DIR/FakeLagHUD"
+chmod 755 "$TUNNEL_DIR/FakeLagTunnel"
+
 echo "4. Ký mã nguồn với đặc quyền TrollStore (ldid)..."
 if command -v ldid >/dev/null 2>&1; then
     echo "-> Đang ký FakeLagTunnel với FakeLagTunnel.entitlements"
@@ -72,7 +77,7 @@ if command -v ldid >/dev/null 2>&1; then
     echo "-> Đang ký FakeLag với FakeLag.entitlements"
     ldid -S"$ROOT_DIR/Entitlements/FakeLag.entitlements" "$APP_DIR/FakeLag" || true
 else
-    echo "Cảnh báo: Chưa cài đặt ldid, bỏ qua bước ký cục bộ (sẽ được ký tự động trên GitHub Actions)."
+    echo "Cảnh báo: Chưa cài đặt ldid, bỏ qua bước ký cục bộ."
 fi
 
 echo "5. Đóng gói FakeLag.tipa và FakeLag.ipa..."
