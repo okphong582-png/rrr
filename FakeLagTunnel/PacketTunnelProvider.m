@@ -5,20 +5,21 @@
 #import <netinet/udp.h>
 #import <arpa/inet.h>
 
-@interface PacketTunnelProvider () {
-    BOOL _isTunnelRunning;
-    BOOL _sendPacketsActive;
-    dispatch_queue_t _tunnelQueue;
-    dispatch_source_t _packetFloodTimer;
-}
+@interface PacketTunnelProvider ()
+
+@property (nonatomic, assign) BOOL isTunnelRunning;
+@property (nonatomic, assign) BOOL sendPacketsActive;
+@property (nonatomic, strong) dispatch_queue_t tunnelQueue;
+@property (nonatomic, strong) dispatch_source_t packetFloodTimer;
+
 @end
 
 @implementation PacketTunnelProvider
 
 - (void)startTunnelWithOptions:(NSDictionary *)options completionHandler:(void (^)(NSError *))completionHandler {
-    _isTunnelRunning = YES;
-    _sendPacketsActive = YES;
-    _tunnelQueue = dispatch_queue_create("com.fakelag.tunnelflood", DISPATCH_QUEUE_SERIAL);
+    self.isTunnelRunning = YES;
+    self.sendPacketsActive = YES;
+    self.tunnelQueue = dispatch_queue_create("com.fakelag.tunnelflood", DISPATCH_QUEUE_SERIAL);
     
     // Cấu hình VPN ảo trên iOS
     NEPacketTunnelNetworkSettings *settings = [[NEPacketTunnelNetworkSettings alloc] initWithTunnelRemoteAddress:@"127.0.0.1"];
@@ -36,51 +37,57 @@
     
     __weak typeof(self) weakSelf = self;
     [self setTunnelNetworkSettings:settings completionHandler:^(NSError * _Nullable error) {
+        typeof(weakSelf) strongSelf = weakSelf;
         if (error) {
             NSLog(@"[FakeLagTunnel] Lỗi cấu hình VPN: %@", error.localizedDescription);
             if (completionHandler) completionHandler(error);
             return;
         }
         
-        // Bắt đầu đọc luồng gói và bắn túi tin random liên tục qua VPN
-        [weakSelf startPacketFlowReading];
-        [weakSelf startRandomPacketSending];
+        if (strongSelf) {
+            [strongSelf startPacketFlowReading];
+            [strongSelf startRandomPacketSending];
+        }
         
         if (completionHandler) completionHandler(nil);
     }];
 }
 
 - (void)startPacketFlowReading {
-    if (!_isTunnelRunning) return;
+    if (!self.isTunnelRunning) return;
     
     __weak typeof(self) weakSelf = self;
     [self.packetFlow readPacketsWithCompletionHandler:^(NSArray<NSData *> * _Nonnull packets, NSArray<NSNumber *> * _Nonnull protocols) {
-        if (!weakSelf || !weakSelf->_isTunnelRunning) return;
+        typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf || !strongSelf.isTunnelRunning) return;
         
         // Chuyển tiếp các gói tin hợp lệ
         if (packets.count > 0) {
-            [weakSelf.packetFlow writePackets:packets withProtocols:protocols];
+            [strongSelf.packetFlow writePackets:packets withProtocols:protocols];
         }
         
-        [weakSelf startPacketFlowReading];
+        [strongSelf startPacketFlowReading];
     }];
 }
 
 // === CƠ CHẾ GỬI TÚI TIN RANDOM LIÊN TỤC QUA VPN KHI BẬT ===
 - (void)startRandomPacketSending {
-    _packetFloodTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _tunnelQueue);
+    self.packetFloodTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.tunnelQueue);
     // Bắn mỗi 5ms một đợt gói tin random
-    dispatch_source_set_timer(_packetFloodTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 5000000ULL, 1000000ULL);
+    dispatch_source_set_timer(self.packetFloodTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 5000000ULL, 1000000ULL);
     
     __weak typeof(self) weakSelf = self;
-    dispatch_source_set_event_handler(_packetFloodTimer, ^{
-        [weakSelf injectRandomPacketsIntoTunnel];
+    dispatch_source_set_event_handler(self.packetFloodTimer, ^{
+        typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf) {
+            [strongSelf injectRandomPacketsIntoTunnel];
+        }
     });
-    dispatch_resume(_packetFloodTimer);
+    dispatch_resume(self.packetFloodTimer);
 }
 
 - (void)injectRandomPacketsIntoTunnel {
-    if (!_isTunnelRunning || !_sendPacketsActive) return;
+    if (!self.isTunnelRunning || !self.sendPacketsActive) return;
     
     NSMutableArray<NSData *> *dummyPackets = [NSMutableArray arrayWithCapacity:5];
     NSMutableArray<NSNumber *> *protocols = [NSMutableArray arrayWithCapacity:5];
@@ -106,11 +113,11 @@
 
 // === DỪNG TOÀN BỘ KHI TẮT ===
 - (void)stopTunnelWithReason:(NEProviderStopReason)reason completionHandler:(void (^)(void))completionHandler {
-    _isTunnelRunning = NO;
-    _sendPacketsActive = NO;
-    if (_packetFloodTimer) {
-        dispatch_source_cancel(_packetFloodTimer);
-        _packetFloodTimer = nil;
+    self.isTunnelRunning = NO;
+    self.sendPacketsActive = NO;
+    if (self.packetFloodTimer) {
+        dispatch_source_cancel(self.packetFloodTimer);
+        self.packetFloodTimer = nil;
     }
     if (completionHandler) {
         completionHandler();

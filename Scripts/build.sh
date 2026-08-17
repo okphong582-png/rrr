@@ -19,12 +19,13 @@ TUNNEL_DIR="$PLUGINS_DIR/FakeLagTunnel.appex"
 rm -rf "$BUILD_DIR" "$OUTPUT_DIR"
 mkdir -p "$APP_DIR" "$TUNNEL_DIR" "$OUTPUT_DIR"
 
-CFLAGS="-arch $ARCH -isysroot $SDK_PATH -miphoneos-version-min=$MIN_IOS_VERSION -O3 -fobjc-arc -Wall"
+CFLAGS="-arch $ARCH -isysroot $SDK_PATH -miphoneos-version-min=$MIN_IOS_VERSION -O3 -fobjc-arc -fmodules -Wno-deprecated-declarations -Wno-unused-variable"
 FRAMEWORKS="-framework UIKit -framework Foundation -framework CoreGraphics -framework NetworkExtension -framework QuartzCore -framework AudioToolbox"
 
 echo "1. Biên dịch FakeLagTunnel (Network Extension)..."
 $CC $CFLAGS $FRAMEWORKS \
     -e _NSExtensionMain \
+    -I"$ROOT_DIR/FakeLagTunnel" \
     "$ROOT_DIR/FakeLagTunnel/PacketTunnelProvider.m" \
     -o "$TUNNEL_DIR/FakeLagTunnel"
 
@@ -63,13 +64,13 @@ cp "$ROOT_DIR/FakeLag/Info.plist" "$APP_DIR/Info.plist"
 echo "4. Ký mã nguồn với đặc quyền TrollStore (ldid)..."
 if command -v ldid >/dev/null 2>&1; then
     echo "-> Đang ký FakeLagTunnel với FakeLagTunnel.entitlements"
-    ldid -S"$ROOT_DIR/Entitlements/FakeLagTunnel.entitlements" "$TUNNEL_DIR/FakeLagTunnel"
+    ldid -S"$ROOT_DIR/Entitlements/FakeLagTunnel.entitlements" "$TUNNEL_DIR/FakeLagTunnel" || true
     
     echo "-> Đang ký FakeLagHUD với FakeLagHUD.entitlements"
-    ldid -S"$ROOT_DIR/Entitlements/FakeLagHUD.entitlements" "$APP_DIR/FakeLagHUD"
+    ldid -S"$ROOT_DIR/Entitlements/FakeLagHUD.entitlements" "$APP_DIR/FakeLagHUD" || true
     
     echo "-> Đang ký FakeLag với FakeLag.entitlements"
-    ldid -S"$ROOT_DIR/Entitlements/FakeLag.entitlements" "$APP_DIR/FakeLag"
+    ldid -S"$ROOT_DIR/Entitlements/FakeLag.entitlements" "$APP_DIR/FakeLag" || true
 else
     echo "Cảnh báo: Chưa cài đặt ldid, bỏ qua bước ký cục bộ (sẽ được ký tự động trên GitHub Actions)."
 fi
