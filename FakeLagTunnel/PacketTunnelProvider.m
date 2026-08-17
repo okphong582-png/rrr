@@ -42,7 +42,7 @@
     
     __weak typeof(self) weakSelf = self;
     [self setTunnelNetworkSettings:settings completionHandler:^(NSError * _Nullable error) {
-        typeof(weakSelf) strongSelf = weakSelf;
+        __strong PacketTunnelProvider *strongSelf = weakSelf;
         if (error) {
             NSLog(@"[FakeLagTunnel] Lỗi cấu hình VPN: %@", error.localizedDescription);
             if (completionHandler) completionHandler(error);
@@ -63,7 +63,7 @@
     
     __weak typeof(self) weakSelf = self;
     [self.packetFlow readPacketsWithCompletionHandler:^(NSArray<NSData *> * _Nonnull packets, NSArray<NSNumber *> * _Nonnull protocols) {
-        typeof(weakSelf) strongSelf = weakSelf;
+        __strong PacketTunnelProvider *strongSelf = weakSelf;
         if (!strongSelf || !strongSelf.isTunnelRunning) return;
         
         NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];

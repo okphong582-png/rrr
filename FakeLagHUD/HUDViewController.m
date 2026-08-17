@@ -15,6 +15,8 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 @property (nonatomic, strong) CALayer *pulseLayer;
 @property (nonatomic, strong) UIView *innerCircle;
 @property (nonatomic, assign) BOOL isLagActive;
+@property (nonatomic, assign) BOOL isDragging;
+@property (nonatomic, assign) BOOL longPressTriggered;
 
 - (void)setLagActive:(BOOL)active animated:(BOOL)animated;
 
@@ -23,10 +25,8 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 @implementation DraggableFloatingButton {
     CGPoint _startTouchPoint;
     CGPoint _startCenter;
-    BOOL _isDragging;
     NSTimeInterval _touchStartTime;
     NSTimer *_longPressTimer;
-    BOOL _longPressTriggered;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -80,8 +80,8 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     UITouch *touch = [touches anyObject];
     _startTouchPoint = [touch locationInView:self.window];
     _startCenter = self.center;
-    _isDragging = NO;
-    _longPressTriggered = NO;
+    self.isDragging = NO;
+    self.longPressTriggered = NO;
     _touchStartTime = [NSDate timeIntervalSinceReferenceDate];
     
     // Haptic feedback nhẹ khi chạm vào nút
@@ -92,9 +92,9 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     [_longPressTimer invalidate];
     __weak typeof(self) weakSelf = self;
     _longPressTimer = [NSTimer scheduledTimerWithTimeInterval:0.7 repeats:NO block:^(NSTimer * _Nonnull timer) {
-        typeof(weakSelf) strongSelf = weakSelf;
-        if (strongSelf && !strongSelf->_isDragging) {
-            strongSelf->_longPressTriggered = YES;
+        __strong DraggableFloatingButton *strongSelf = weakSelf;
+        if (strongSelf && !strongSelf.isDragging) {
+            strongSelf.longPressTriggered = YES;
             AudioServicesPlaySystemSound(1520);
             if (strongSelf.longPressHandler) {
                 strongSelf.longPressHandler();
@@ -116,12 +116,12 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     CGFloat dy = currentPoint.y - _startTouchPoint.y;
     
     if (hypot(dx, dy) > 8.0) {
-        _isDragging = YES;
+        self.isDragging = YES;
         [_longPressTimer invalidate];
         _longPressTimer = nil;
     }
     
-    if (_isDragging) {
+    if (self.isDragging) {
         CGPoint newCenter = CGPointMake(_startCenter.x + dx, _startCenter.y + dy);
         
         CGRect screenBounds = [UIScreen mainScreen].bounds;
@@ -147,9 +147,9 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
         self.alpha = 1.0;
     }];
     
-    if (_longPressTriggered) return;
+    if (self.longPressTriggered) return;
     
-    if (!_isDragging) {
+    if (!self.isDragging) {
         // === SỰ KIỆN CHẠM (TAP): BẬT/TẮT FAKELAG NGAY LẬP TỨC ===
         if (self.tapHandler) {
             self.tapHandler();
