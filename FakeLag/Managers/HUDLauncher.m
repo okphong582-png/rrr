@@ -8,6 +8,11 @@
 
 extern char **environ;
 
+#define POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE 1
+extern int posix_spawnattr_set_persona_np(const posix_spawnattr_t* __restrict, uid_t, uint32_t);
+extern int posix_spawnattr_set_persona_uid_np(const posix_spawnattr_t* __restrict, uid_t);
+extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t* __restrict, uid_t);
+
 @interface HUDLauncher () {
     pid_t _hudPid;
 }
@@ -97,12 +102,12 @@ extern char **environ;
 }
 
 - (BOOL)startHUD {
-    // 1. Hiển thị ngay lập tức cửa sổ nút nổi trực tiếp trên màn hình UIWindowScene
+    // 1. Hiển thị ngay lập tức cửa sổ nút nổi trực tiếp trên màn hình
     dispatch_async(dispatch_get_main_queue(), ^{
         [self showInAppFloatingButton];
     });
     
-    // 2. Cấp quyền thực thi và khởi chạy daemon nền
+    // 2. Cấp quyền thực thi và khởi chạy daemon nền với POSIX Persona 99 chuẩn TrollSpeed/External_ESP
     NSString *execPath = [self hudExecutablePath];
     if ([[NSFileManager defaultManager] fileExistsAtPath:execPath]) {
         chmod([execPath UTF8String], 0755);
@@ -114,8 +119,19 @@ extern char **environ;
             
             posix_spawnattr_t attr;
             posix_spawnattr_init(&attr);
-            short flags = POSIX_SPAWN_SETPGROUP;
-            posix_spawnattr_setflags(&attr, flags);
+            
+            if (&posix_spawnattr_set_persona_np) {
+                posix_spawnattr_set_persona_np(&attr, 99, POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE);
+            }
+            if (&posix_spawnattr_set_persona_uid_np) {
+                posix_spawnattr_set_persona_uid_np(&attr, 0);
+            }
+            if (&posix_spawnattr_set_persona_gid_np) {
+                posix_spawnattr_set_persona_gid_np(&attr, 0);
+            }
+            
+            posix_spawnattr_setpgroup(&attr, 0);
+            posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETPGROUP);
             
             pid_t pid = 0;
             int result = posix_spawn(&pid, path, NULL, &attr, args, environ);
@@ -123,7 +139,7 @@ extern char **environ;
             
             if (result == 0 && pid > 0) {
                 _hudPid = pid;
-                NSLog(@"[HUDLauncher] Spawned FakeLagHUD daemon (PID: %d)", pid);
+                NSLog(@"[HUDLauncher] Spawned FakeLagHUD with Persona 99 (PID: %d)", pid);
             }
         }
     }
@@ -166,10 +182,9 @@ extern char **environ;
     
     _inAppHUDWindow.hidden = NO;
     _inAppHUDWindow.alpha = 1.0;
-    _inAppHUDWindow.windowLevel = UIWindowLevelAlert + 100000.0;
+    _inAppHUDWindow.windowLevel = 10000010.0;
     [_inAppHUDWindow makeKeyAndVisible];
     
-    // Đảm bảo nút nằm trong màn hình
     if (_inAppHUDVC && _inAppHUDVC.floatingContainer) {
         _inAppHUDVC.floatingContainer.hidden = NO;
         _inAppHUDVC.floatingContainer.alpha = 1.0;
