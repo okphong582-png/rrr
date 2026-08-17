@@ -10,9 +10,10 @@
 @interface PacketTunnelProvider ()
 
 @property (nonatomic, assign) BOOL isTunnelRunning;
-@property (nonatomic, assign) BOOL isSendingPackets;
-@property (nonatomic, strong) dispatch_queue_t floodQueue;
-@property (nonatomic, strong) dispatch_source_t floodTimer;
+@property (nonatomic, assign) BOOL freezeEnabled;
+@property (nonatomic, assign) BOOL isDropPhase;
+@property (nonatomic, assign) NSTimeInterval cycleStart;
+@property (nonatomic, strong) dispatch_queue_t tunnelQueue;
 
 @end
 
@@ -20,10 +21,12 @@
 
 - (void)startTunnelWithOptions:(NSDictionary *)options completionHandler:(void (^)(NSError *))completionHandler {
     self.isTunnelRunning = YES;
-    self.isSendingPackets = YES; // Khi bật VPN -> Kích hoạt gửi túi tin ngẫu nhiên
-    self.floodQueue = dispatch_queue_create("com.fakelag.packetengine", DISPATCH_QUEUE_SERIAL);
+    self.freezeEnabled = YES;
+    self.isDropPhase = YES;
+    self.cycleStart = [NSDate timeIntervalSinceReferenceDate];
+    self.tunnelQueue = dispatch_queue_create("com.fakelag.cyclicfreeze", DISPATCH_QUEUE_SERIAL);
     
-    // Cấu hình TUN interface trên iOS
+    // Cấu hình TUN interface cho NetworkExtension VPN
     NEPacketTunnelNetworkSettings *settings = [[NEPacketTunnelNetworkSettings alloc] initWithTunnelRemoteAddress:@"127.0.0.1"];
     
     NEIPv4Settings *ipv4Settings = [[NEIPv4Settings alloc] initWithAddresses:@[@"10.99.0.2"]
@@ -47,16 +50,15 @@
         }
         
         if (strongSelf) {
-            [strongSelf startNormalPacketForwarding];
-            [strongSelf startContinuousPacketFlood];
+            [strongSelf startPacketProcessing];
         }
         
         if (completionHandler) completionHandler(nil);
     }];
 }
 
-// Chuyển tiếp các gói tin bình thường của hệ thống
-- (void)startNormalPacketForwarding {
+// === CƠ CHẾ FREEZE CHU KỲ (2.0s DROP, 0.5s THẢ) - PING THẤP, ĐỊCH ĐƠ HOÀN TOÀN ===
+- (void)startPacketProcessing {
     if (!self.isTunnelRunning) return;
     
     __weak typeof(self) weakSelf = self;
@@ -64,84 +66,73 @@
         typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf || !strongSelf.isTunnelRunning) return;
         
-        if (packets.count > 0) {
-            [strongSelf.packetFlow writePackets:packets withProtocols:protocols];
+        NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+        NSTimeInterval elapsed = now - strongSelf.cycleStart;
+        
+        // Quản lý chu kỳ: 2.0s Drop -> 0.5s Thả
+        const NSTimeInterval CYCLE_DROP = 2.0;
+        const NSTimeInterval CYCLE_RELEASE = 0.5;
+        
+        if (strongSelf.isDropPhase && elapsed >= CYCLE_DROP) {
+            strongSelf.isDropPhase = NO;
+            strongSelf.cycleStart = now;
+        } else if (!strongSelf.isDropPhase && elapsed >= CYCLE_RELEASE) {
+            strongSelf.isDropPhase = YES;
+            strongSelf.cycleStart = now;
         }
         
-        [strongSelf startNormalPacketForwarding];
+        NSMutableArray<NSData *> *forwardPackets = [NSMutableArray arrayWithCapacity:packets.count];
+        NSMutableArray<NSNumber *> *forwardProtocols = [NSMutableArray arrayWithCapacity:protocols.count];
+        
+        for (NSUInteger i = 0; i < packets.count; i++) {
+            NSData *pktData = packets[i];
+            NSNumber *proto = protocols[i];
+            
+            BOOL dropThis = NO;
+            
+            if (pktData.length >= 28) {
+                const uint8_t *bytes = (const uint8_t *)pktData.bytes;
+                uint8_t ipVer = (bytes[0] >> 4) & 0x0F;
+                
+                if (ipVer == 4 && bytes[9] == 17) { // IPv4 UDP
+                    uint8_t ihl = (bytes[0] & 0x0F) * 4;
+                    if (pktData.length >= ihl + 8) {
+                        uint16_t srcPort = ntohs(*(uint16_t *)&bytes[ihl]);
+                        uint16_t dstPort = ntohs(*(uint16_t *)&bytes[ihl + 2]);
+                        
+                        // Bỏ qua DNS (53), NTP (123)
+                        if (srcPort != 53 && dstPort != 53 && srcPort != 123) {
+                            // Nhận diện cổng game UDP (10010 - 10020)
+                            BOOL isGameTraffic = (srcPort >= 10010 && srcPort <= 10020) || (dstPort >= 10010 && dstPort <= 10020);
+                            
+                            // Nếu FREEZE ĐANG BẬT và đang trong pha 2.0s Drop -> DROP GÓI TIN
+                            if (strongSelf.freezeEnabled && strongSelf.isDropPhase && isGameTraffic) {
+                                dropThis = YES;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (!dropThis) {
+                [forwardPackets addObject:pktData];
+                [forwardProtocols addObject:proto];
+            }
+        }
+        
+        if (forwardPackets.count > 0) {
+            [strongSelf.packetFlow writePackets:forwardPackets withProtocols:forwardProtocols];
+        }
+        
+        [strongSelf startPacketProcessing];
     }];
 }
 
-// === KHI BẬT: BẮN TÚI TIN RANDOM LIÊN TỤC LÊN CỔNG GAME (10010 - 10020) LÀM ĐỊCH ĐƠ ===
-- (void)startContinuousPacketFlood {
-    if (self.floodTimer) {
-        dispatch_source_cancel(self.floodTimer);
-        self.floodTimer = nil;
-    }
-    
-    self.isSendingPackets = YES;
-    self.floodTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.floodQueue);
-    
-    // Tần số cực cao: 3ms mỗi đợt burst túi tin
-    dispatch_source_set_timer(self.floodTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 3000000ULL, 500000ULL);
-    
-    __weak typeof(self) weakSelf = self;
-    dispatch_source_set_event_handler(self.floodTimer, ^{
-        typeof(weakSelf) strongSelf = weakSelf;
-        if (strongSelf && strongSelf.isSendingPackets && strongSelf.isTunnelRunning) {
-            [strongSelf sendRandomGamePacketsBurst];
-        }
-    });
-    dispatch_resume(self.floodTimer);
-}
-
-// Gửi 1 đợt túi tin ngẫu nhiên vào luồng VPN cổng game 10010 - 10020
-- (void)sendRandomGamePacketsBurst {
-    NSMutableArray<NSData *> *burstPackets = [NSMutableArray arrayWithCapacity:8];
-    NSMutableArray<NSNumber *> *protos = [NSMutableArray arrayWithCapacity:8];
-    
-    uint8_t buffer[1024];
-    for (int i = 0; i < 8; i++) {
-        arc4random_buf(buffer, sizeof(buffer));
-        
-        // Cấu hình IPv4 Header
-        buffer[0] = 0x45;
-        buffer[1] = 0x00;
-        buffer[2] = 0x04;
-        buffer[3] = 0x00; // 1024 bytes
-        buffer[8] = 64;   // TTL
-        buffer[9] = 17;   // Protocol UDP
-        
-        // Random cổng game đích: 10010 đến 10020
-        uint16_t gamePort = (uint16_t)(10010 + arc4random_uniform(11));
-        buffer[22] = (gamePort >> 8) & 0xFF;
-        buffer[23] = gamePort & 0xFF;
-        
-        // Độ dài UDP Header
-        uint16_t udpLen = 1004;
-        buffer[24] = (udpLen >> 8) & 0xFF;
-        buffer[25] = udpLen & 0xFF;
-        
-        [burstPackets addObject:[NSData dataWithBytes:buffer length:sizeof(buffer)]];
-        [protos addObject:@(AF_INET)];
-    }
-    
-    [self.packetFlow writePackets:burstPackets withProtocols:protos];
-}
-
-// === KHI TẮT: NGƯNG GỬI TÚI TIN NGAY LẬP TỨC 100% ===
-- (void)stopSendingPacketsImmediately {
-    self.isSendingPackets = NO;
-    if (self.floodTimer) {
-        dispatch_source_cancel(self.floodTimer);
-        self.floodTimer = nil;
-    }
-    NSLog(@"[FakeLagTunnel] ĐÃ DỪNG GỬI TÚI TIN HOÀN TOÀN!");
-}
-
+// === TẮT FREEZE: THẢ TOÀN BỘ 100% ===
 - (void)stopTunnelWithReason:(NEProviderStopReason)reason completionHandler:(void (^)(void))completionHandler {
     self.isTunnelRunning = NO;
-    [self stopSendingPacketsImmediately];
+    self.freezeEnabled = NO;
+    self.isDropPhase = NO;
     
     if (completionHandler) {
         completionHandler();
@@ -150,10 +141,13 @@
 
 - (void)handleAppMessage:(NSData *)messageData completionHandler:(void (^)(NSData *))completionHandler {
     NSString *cmd = [[NSString alloc] initWithData:messageData encoding:NSUTF8StringEncoding];
-    if ([cmd isEqualToString:@"FREEZE_ON"] || [cmd isEqualToString:@"START_FLOOD"]) {
-        [self startContinuousPacketFlood];
-    } else if ([cmd isEqualToString:@"FREEZE_OFF"] || [cmd isEqualToString:@"STOP_FLOOD"]) {
-        [self stopSendingPacketsImmediately];
+    if ([cmd isEqualToString:@"FREEZE_ON"]) {
+        self.freezeEnabled = YES;
+        self.isDropPhase = YES;
+        self.cycleStart = [NSDate timeIntervalSinceReferenceDate];
+    } else if ([cmd isEqualToString:@"FREEZE_OFF"]) {
+        self.freezeEnabled = NO;
+        self.isDropPhase = NO;
     }
     
     if (completionHandler) completionHandler([@"OK" dataUsingEncoding:NSUTF8StringEncoding]);
