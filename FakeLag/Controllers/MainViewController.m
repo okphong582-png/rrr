@@ -152,10 +152,10 @@
     
     CGFloat colW = (width - 48) / 2.0;
     
-    [self addStatItemToView:_statsCard frame:CGRectMake(16, 46, colW, 45) title:@"Tổng Túi Tin Đã Gửi" outLabel:&_packetsValueLabel defaultVal:@"0 pkts"];
-    [self addStatItemToView:_statsCard frame:CGRectMake(24 + colW, 46, colW, 45) title:@"Dung Lượng Gửi" outLabel:&_bytesValueLabel defaultVal:@"0.0 KB"];
-    [self addStatItemToView:_statsCard frame:CGRectMake(16, 100, colW, 45) title:@"Tốc Độ (PPS)" outLabel:&_ppsValueLabel defaultVal:@"0 pps"];
-    [self addStatItemToView:_statsCard frame:CGRectMake(24 + colW, 100, colW, 45) title:@"Lưu Lượng" outLabel:&_speedValueLabel defaultVal:@"0.0 KB/s"];
+    _packetsValueLabel = [self createStatItemInView:_statsCard frame:CGRectMake(16, 46, colW, 45) title:@"Tổng Túi Tin Đã Gửi" defaultVal:@"0 pkts"];
+    _bytesValueLabel = [self createStatItemInView:_statsCard frame:CGRectMake(24 + colW, 46, colW, 45) title:@"Dung Lượng Gửi" defaultVal:@"0.0 KB"];
+    _ppsValueLabel = [self createStatItemInView:_statsCard frame:CGRectMake(16, 100, colW, 45) title:@"Tốc Độ (PPS)" defaultVal:@"0 pps"];
+    _speedValueLabel = [self createStatItemInView:_statsCard frame:CGRectMake(24 + colW, 100, colW, 45) title:@"Lưu Lượng" defaultVal:@"0.0 KB/s"];
     
     [_contentView addSubview:_statsCard];
     currentY += 172.0;
@@ -237,7 +237,7 @@
     return card;
 }
 
-- (void)addStatItemToView:(UIView *)parent frame:(CGRect)frame title:(NSString *)title outLabel:(UILabel **)outLabel defaultVal:(NSString *)defaultVal {
+- (UILabel *)createStatItemInView:(UIView *)parent frame:(CGRect)frame title:(NSString *)title defaultVal:(NSString *)defaultVal {
     UIView *item = [[UIView alloc] initWithFrame:frame];
     item.backgroundColor = [UIColor colorWithRed:0.07 green:0.08 blue:0.11 alpha:1.0];
     item.layer.cornerRadius = 8.0;
@@ -254,8 +254,8 @@
     vLbl.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     [item addSubview:vLbl];
     
-    *outLabel = vLbl;
     [parent addSubview:item];
+    return vLbl;
 }
 
 - (void)refreshState {
