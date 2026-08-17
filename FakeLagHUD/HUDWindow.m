@@ -2,21 +2,52 @@
 
 @implementation HUDWindow
 
+- (instancetype)initWithWindowScene:(UIWindowScene *)windowScene {
+    self = [super initWithWindowScene:windowScene];
+    if (self) {
+        [self commonInit];
+    }
+    return self;
+}
+
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
-        self.windowLevel = 9999999.0;
-        self.userInteractionEnabled = YES;
-        self.clipsToBounds = NO;
-        self.hidden = NO;
-        
-        // Private API compatibility for global system overlay
-        if ([self respondsToSelector:@selector(_setSecure:)]) {
-            [self performSelector:@selector(_setSecure:) withObject:@(YES)];
-        }
+        [self commonInit];
     }
     return self;
+}
+
+- (void)commonInit {
+    self.backgroundColor = [UIColor clearColor];
+    self.windowLevel = UIWindowLevelAlert + 1000000.0;
+    self.userInteractionEnabled = YES;
+    self.clipsToBounds = NO;
+    self.hidden = NO;
+    self.alpha = 1.0;
+    
+    if (@available(iOS 13.0, *)) {
+        if (!self.windowScene) {
+            for (UIScene *s in [UIApplication sharedApplication].connectedScenes) {
+                if ([s isKindOfClass:[UIWindowScene class]] && s.activationState == UISceneActivationStateForegroundActive) {
+                    self.windowScene = (UIWindowScene *)s;
+                    break;
+                }
+            }
+            if (!self.windowScene) {
+                for (UIScene *s in [UIApplication sharedApplication].connectedScenes) {
+                    if ([s isKindOfClass:[UIWindowScene class]]) {
+                        self.windowScene = (UIWindowScene *)s;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if ([self respondsToSelector:@selector(_setSecure:)]) {
+        [self performSelector:@selector(_setSecure:) withObject:@(YES)];
+    }
 }
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {

@@ -7,6 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) UIView *floatingButtonView;
 
 - (instancetype)initWithFrame:(CGRect)frame;
+- (instancetype)initWithWindowScene:(UIWindowScene *)windowScene API_AVAILABLE(ios(13.0));
 
 @end
 
