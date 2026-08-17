@@ -45,13 +45,15 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     _floatingContainer.backgroundColor = [UIColor clearColor];
     _floatingContainer.clipsToBounds = NO;
     
+    // Pulse animation ring
     _pulseLayer = [CALayer layer];
     _pulseLayer.frame = CGRectMake(-8, -8, buttonSize + 16, buttonSize + 16);
     _pulseLayer.cornerRadius = (buttonSize + 16) / 2.0;
-    _pulseLayer.backgroundColor = [UIColor colorWithRed:0.0 green:0.85 blue:1.0 alpha:0.4].CGColor;
+    _pulseLayer.backgroundColor = [UIColor colorWithRed:1.0 green:0.15 blue:0.25 alpha:0.4].CGColor;
     _pulseLayer.opacity = 0.0;
     [_floatingContainer.layer addSublayer:_pulseLayer];
     
+    // Nút tròn xanh có chữ "fakelag"
     _fakelagButton = [UIButton buttonWithType:UIButtonTypeCustom];
     _fakelagButton.frame = CGRectMake(0, 0, buttonSize, buttonSize);
     _fakelagButton.layer.cornerRadius = buttonSize / 2.0;
@@ -60,9 +62,9 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     _fakelagButton.layer.borderWidth = 2.5;
     _fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.9].CGColor;
     
-    [_fakelagButton setTitle:@"FREEZE" forState:UIControlStateNormal];
+    [_fakelagButton setTitle:@"fakelag" forState:UIControlStateNormal];
     [_fakelagButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
-    _fakelagButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightHeavy];
+    _fakelagButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightHeavy];
     _fakelagButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     
     _floatingContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.4 alpha:0.6].CGColor;
@@ -135,6 +137,7 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     }
 }
 
+// Bấm nút tròn để BẬT gửi túi tin random qua VPN / TẮT dừng gửi
 - (void)handleButtonTap:(UIButton *)sender {
     [_feedbackGenerator impactOccurred];
     
@@ -159,20 +162,22 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     if (gesture.state == UIGestureRecognizerStateBegan) {
         AudioServicesPlaySystemSound(1519);
         
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🧊 FakeLag Freeze Mode"
-                                                                       message:@"Tùy chọn chế độ"
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"⚡ FakeLag Overlay"
+                                                                       message:@"Tùy chọn nhanh"
                                                                 preferredStyle:UIAlertControllerStyleActionSheet];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:@"Chuyển Đổi Chế Độ (Cycle Mode)" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            [[PacketEngine sharedEngine] cycleNextMode];
-            [self refreshInitialState];
-        }]];
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Đặt Lại Vị Trí Nút Nổi" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             [UIView animateWithDuration:0.3 animations:^{
                 self.floatingContainer.center = CGPointMake(45, 150);
                 [self saveCurrentPosition];
             }];
+        }]];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"Mở Ứng Dụng Chính" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            NSURL *url = [NSURL URLWithString:@"fakelag://"];
+            if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+            }
         }]];
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
@@ -185,20 +190,20 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     
     void (^updateBlock)(void) = ^{
         if (isActive) {
-            // FREEZE ACTIVE: Glowing Ice Blue / Red Pulse
-            self.fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.67 blue:1.0 alpha:1.0];
-            [self.fakelagButton setTitle:@"FROZEN" forState:UIControlStateNormal];
+            // ĐANG GỬI TÚI TIN: Nút đỏ rực rỡ phát sáng "LAG ON"
+            self.fakelagButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.12 blue:0.25 alpha:1.0];
+            [self.fakelagButton setTitle:@"LAG ON" forState:UIControlStateNormal];
             [self.fakelagButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-            self.fakelagButton.layer.borderColor = [UIColor colorWithRed:0.7 green:0.9 blue:1.0 alpha:1.0].CGColor;
+            self.fakelagButton.layer.borderColor = [UIColor colorWithRed:1.0 green:0.8 blue:0.8 alpha:0.9].CGColor;
             
-            self.floatingContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.7 blue:1.0 alpha:0.9].CGColor;
+            self.floatingContainer.layer.shadowColor = [UIColor colorWithRed:1.0 green:0.1 blue:0.2 alpha:0.9].CGColor;
             self.floatingContainer.layer.shadowRadius = 14.0;
             
-            [self startPulseAnimationWithColor:[UIColor colorWithRed:0.0 green:0.67 blue:1.0 alpha:0.6]];
+            [self startPulseAnimationWithColor:[UIColor colorWithRed:1.0 green:0.1 blue:0.2 alpha:0.6]];
         } else {
-            // IDLE: Neon Emerald Green
+            // TẮT / BÌNH THƯỜNG: Nút xanh neon "fakelag"
             self.fakelagButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0];
-            [self.fakelagButton setTitle:@"FREEZE" forState:UIControlStateNormal];
+            [self.fakelagButton setTitle:@"fakelag" forState:UIControlStateNormal];
             [self.fakelagButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
             self.fakelagButton.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.9].CGColor;
             
@@ -223,15 +228,15 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     
     CABasicAnimation *scaleAnim = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
     scaleAnim.fromValue = @(0.9);
-    scaleAnim.toValue = @(1.4);
+    scaleAnim.toValue = @(1.38);
     
     CABasicAnimation *opacityAnim = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    opacityAnim.fromValue = @(0.8);
+    opacityAnim.fromValue = @(0.75);
     opacityAnim.toValue = @(0.0);
     
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = @[scaleAnim, opacityAnim];
-    group.duration = 1.0;
+    group.duration = 1.1;
     group.repeatCount = HUGE_VALF;
     group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
     
@@ -253,7 +258,7 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     });
     
     if (status != NOTIFY_STATUS_OK) {
-        NSLog(@"[HUDViewController] notify_register_dispatch failed with code: %d", status);
+        NSLog(@"[HUDViewController] notify failed: %d", status);
     }
 }
 

@@ -11,11 +11,6 @@
 @property (nonatomic, strong) UIButton *startOverlayButton;
 @property (nonatomic, strong) UILabel *overlayStatusLabel;
 
-// Mode Selection Card
-@property (nonatomic, strong) UIView *modeCard;
-@property (nonatomic, strong) UISegmentedControl *modeSegment;
-@property (nonatomic, strong) UILabel *modeDescLabel;
-
 // VPN Card
 @property (nonatomic, strong) UIView *vpnCard;
 @property (nonatomic, strong) UIButton *vpnToggleButton;
@@ -24,7 +19,7 @@
 // Live Stats Card
 @property (nonatomic, strong) UIView *statsCard;
 @property (nonatomic, strong) UILabel *packetsValueLabel;
-@property (nonatomic, strong) UILabel *bufferedValueLabel;
+@property (nonatomic, strong) UILabel *bytesValueLabel;
 @property (nonatomic, strong) UILabel *ppsValueLabel;
 @property (nonatomic, strong) UILabel *speedValueLabel;
 
@@ -80,7 +75,7 @@
     _scrollView.showsVerticalScrollIndicator = NO;
     [self.view addSubview:_scrollView];
     
-    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 1150)];
+    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 950)];
     [_scrollView addSubview:_contentView];
     
     CGFloat width = self.view.bounds.size.width - 32;
@@ -94,15 +89,15 @@
     bannerView.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.08].CGColor;
     
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 14, width - 32, 26)];
-    titleLabel.text = @"⚡ FAKELAG OVERLAY (HI.PY ENGINE)";
+    titleLabel.text = @"⚡ FAKELAG TROLLSTORE";
     titleLabel.textColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.48 alpha:1.0];
     titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightHeavy];
     [bannerView addSubview:titleLabel];
     
     UILabel *subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 42, width - 32, 24)];
-    subtitleLabel.text = @"TeleKill • Freeze • Ghost Lag • Burst 4 pkts/5ms";
+    subtitleLabel.text = @"Nổi Nút Tròn Xanh • Gửi Túi Tin Random Qua VPN";
     subtitleLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
-    subtitleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+    subtitleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [bannerView addSubview:subtitleLabel];
     
     [_contentView addSubview:bannerView];
@@ -130,32 +125,8 @@
     [_contentView addSubview:_overlayCard];
     currentY += 157.0;
     
-    // 2. Mode Selector Card (TeleKill / Freeze / Ghost / Flood)
-    _modeCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 155) title:@"2. CHẾ ĐỘ LAG CHUẨN HI.PY"];
-    
-    NSArray *modes = @[@"⚡ Tele", @"🧊 Freeze", @"👻 Ghost", @"💥 Flood"];
-    _modeSegment = [[UISegmentedControl alloc] initWithItems:modes];
-    _modeSegment.frame = CGRectMake(16, 46, width - 32, 38);
-    _modeSegment.selectedSegmentIndex = 0;
-    _modeSegment.backgroundColor = [UIColor colorWithRed:0.07 green:0.08 blue:0.11 alpha:1.0];
-    _modeSegment.selectedSegmentTintColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.42 alpha:1.0];
-    [_modeSegment setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold]} forState:UIControlStateNormal];
-    [_modeSegment setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0], NSFontAttributeName: [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold]} forState:UIControlStateSelected];
-    [_modeSegment addTarget:self action:@selector(modeSegmentChanged:) forControlEvents:UIControlEventValueChanged];
-    [_modeCard addSubview:_modeSegment];
-    
-    _modeDescLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 92, width - 32, 50)];
-    _modeDescLabel.numberOfLines = 2;
-    _modeDescLabel.text = @"⚡ TeleKill: Chặn lưu gói di chuyển Port 10010-10020. Khi tắt sẽ xả dồn Burst 4 gói / 5ms.";
-    _modeDescLabel.textColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.48 alpha:1.0];
-    _modeDescLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
-    [_modeCard addSubview:_modeDescLabel];
-    
-    [_contentView addSubview:_modeCard];
-    currentY += 167.0;
-    
-    // 3. VPN & Lag Engine Card
-    _vpnCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 145) title:@"3. VPN & CẤP QUYỀN HỆ THỐNG"];
+    // 2. VPN Card
+    _vpnCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 145) title:@"2. VPN & CẤP QUYỀN HỆ THỐNG"];
     
     _vpnStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 44, width - 32, 22)];
     _vpnStatusLabel.text = @"VPN: Đã sẵn sàng";
@@ -167,7 +138,7 @@
     _vpnToggleButton.frame = CGRectMake(16, 78, width - 32, 50);
     _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.18 green:0.20 blue:0.26 alpha:1.0];
     _vpnToggleButton.layer.cornerRadius = 12.0;
-    [_vpnToggleButton setTitle:@"🚀 BẬT FAKE LAG NGAY" forState:UIControlStateNormal];
+    [_vpnToggleButton setTitle:@"🚀 BẬT GỬI TÚI TIN RANDOM" forState:UIControlStateNormal];
     [_vpnToggleButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     _vpnToggleButton.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightBold];
     [_vpnToggleButton addTarget:self action:@selector(toggleVPNTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -176,30 +147,30 @@
     [_contentView addSubview:_vpnCard];
     currentY += 157.0;
     
-    // 4. Live Metrics Card
-    _statsCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 160) title:@"4. THÔNG SỐ GÓI TIN & BUFFER HI.PY"];
+    // 3. Live Metrics Card
+    _statsCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 160) title:@"3. THÔNG SỐ TÚI TIN RANDOM ĐÃ GỬI"];
     
     CGFloat colW = (width - 48) / 2.0;
     
-    [self addStatItemToView:_statsCard frame:CGRectMake(16, 46, colW, 45) title:@"Tổng Gói Đã Gửi" outLabel:&_packetsValueLabel defaultVal:@"0 pkts"];
-    [self addStatItemToView:_statsCard frame:CGRectMake(24 + colW, 46, colW, 45) title:@"Túi Đang Đệm (Buffer)" outLabel:&_bufferedValueLabel defaultVal:@"0 pkts"];
+    [self addStatItemToView:_statsCard frame:CGRectMake(16, 46, colW, 45) title:@"Tổng Túi Tin Đã Gửi" outLabel:&_packetsValueLabel defaultVal:@"0 pkts"];
+    [self addStatItemToView:_statsCard frame:CGRectMake(24 + colW, 46, colW, 45) title:@"Dung Lượng Gửi" outLabel:&_bytesValueLabel defaultVal:@"0.0 KB"];
     [self addStatItemToView:_statsCard frame:CGRectMake(16, 100, colW, 45) title:@"Tốc Độ (PPS)" outLabel:&_ppsValueLabel defaultVal:@"0 pps"];
     [self addStatItemToView:_statsCard frame:CGRectMake(24 + colW, 100, colW, 45) title:@"Lưu Lượng" outLabel:&_speedValueLabel defaultVal:@"0.0 KB/s"];
     
     [_contentView addSubview:_statsCard];
     currentY += 172.0;
     
-    // 5. Rate & Packet Size Sliders
-    _controlsCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 180) title:@"5. TÙY CHỈNH MỨC ĐỘ LAG"];
+    // 4. Rate & Packet Size Sliders
+    _controlsCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 180) title:@"4. TÙY CHỈNH TỐC ĐỘ GỬI TÚI TIN"];
     
     UILabel *rateTitle = [[UILabel alloc] initWithFrame:CGRectMake(16, 42, 180, 20)];
-    rateTitle.text = @"Tốc độ gói (PPS):";
+    rateTitle.text = @"Tốc độ gửi (PPS):";
     rateTitle.textColor = [UIColor colorWithWhite:0.75 alpha:1.0];
     rateTitle.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
     [_controlsCard addSubview:rateTitle];
     
     _rateValueLabel = [[UILabel alloc] initWithFrame:CGRectMake(width - 120, 42, 104, 20)];
-    _rateValueLabel.text = @"1000 pps";
+    _rateValueLabel.text = @"1500 pps";
     _rateValueLabel.textColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0];
     _rateValueLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
     _rateValueLabel.textAlignment = NSTextAlignmentRight;
@@ -208,13 +179,13 @@
     _rateSlider = [[UISlider alloc] initWithFrame:CGRectMake(16, 66, width - 32, 30)];
     _rateSlider.minimumValue = 100;
     _rateSlider.maximumValue = 5000;
-    _rateSlider.value = 1000;
+    _rateSlider.value = 1500;
     _rateSlider.tintColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0];
     [_rateSlider addTarget:self action:@selector(rateSliderChanged:) forControlEvents:UIControlEventValueChanged];
     [_controlsCard addSubview:_rateSlider];
     
     UILabel *sizeTitle = [[UILabel alloc] initWithFrame:CGRectMake(16, 106, 180, 20)];
-    sizeTitle.text = @"Kích thước gói (Bytes):";
+    sizeTitle.text = @"Kích thước túi tin (Bytes):";
     sizeTitle.textColor = [UIColor colorWithWhite:0.75 alpha:1.0];
     sizeTitle.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
     [_controlsCard addSubview:sizeTitle];
@@ -240,9 +211,9 @@
     // Instructions note
     UILabel *instructions = [[UILabel alloc] initWithFrame:CGRectMake(20, currentY, width - 8, 80)];
     instructions.numberOfLines = 0;
-    instructions.text = @"💡 Cơ chế Hi.py:\n• TeleKill: Chặn gửi vị trí và xả dồn 4 gói/5ms khi tắt để dịch chuyển tức thời.\n• Freeze: Chặn gói tin server để địch đơ đứng yên trên màn hình.\n• Ghost: Lệch hitbox khiến địch bắn không trúng.";
+    instructions.text = @"💡 Hướng dẫn:\n• Bấm 'Bật Nút Nổi' để hiển thị nút tròn xanh 'fakelag'.\n• Ra màn hình chính hoặc vào game, kéo nút tròn đến vị trí bạn muốn.\n• Chạm nút tròn để BẬT gửi túi tin random qua VPN (tạo fake lag / đơ đối phương). Chạm lại để TẮT.";
     instructions.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
-    instructions.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
+    instructions.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightRegular];
     [_contentView addSubview:instructions];
     currentY += 90;
     
@@ -287,30 +258,6 @@
     [parent addSubview:item];
 }
 
-- (void)modeSegmentChanged:(UISegmentedControl *)sender {
-    FakeLagMode mode = (FakeLagMode)sender.selectedSegmentIndex;
-    [[PacketEngine sharedEngine] switchMode:mode];
-    
-    switch (mode) {
-        case FakeLagModeTeleKill:
-            _modeDescLabel.text = @"⚡ TeleKill: Chặn lưu gói di chuyển Port 10010-10020. Khi tắt sẽ xả dồn Burst 4 gói / 5ms.";
-            _modeDescLabel.textColor = [UIColor colorWithRed:1.0 green:0.4 blue:0.0 alpha:1.0];
-            break;
-        case FakeLagModeFreeze:
-            _modeDescLabel.text = @"🧊 Freeze: Chặn gói Server Inbound 10011-10019 làm đối phương bị đơ đứng yên.";
-            _modeDescLabel.textColor = [UIColor colorWithRed:0.0 green:0.67 blue:1.0 alpha:1.0];
-            break;
-        case FakeLagModeGhost:
-            _modeDescLabel.text = @"👻 Ghost Lag: Chặn gói đồng bộ 55-300B để làm lệch hitbox nhân vật.";
-            _modeDescLabel.textColor = [UIColor colorWithRed:0.75 green:0.52 blue:0.99 alpha:1.0];
-            break;
-        case FakeLagModeFlood:
-            _modeDescLabel.text = @"💥 Flood 999ms: Bắn rác UDP liên tục tốc độ cao để đẩy ping lên 999ms+.";
-            _modeDescLabel.textColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.48 alpha:1.0];
-            break;
-    }
-}
-
 - (void)refreshState {
     BOOL hudRunning = [HUDLauncher sharedLauncher].isHUDRunning;
     if (hudRunning) {
@@ -329,18 +276,16 @@
     
     BOOL isLag = [VPNManager sharedManager].isLagActive;
     if (isLag) {
-        _vpnStatusLabel.text = @"VPN: ĐANG BẬT FAKE LAG (Đang chặn & đệm gói)";
+        _vpnStatusLabel.text = @"VPN: ĐANG GỬI TÚI TIN RANDOM LIÊN TỤC";
         _vpnStatusLabel.textColor = [UIColor colorWithRed:1.0 green:0.25 blue:0.35 alpha:1.0];
-        [_vpnToggleButton setTitle:@"⏹ DỪNG & XẢ GÓI TIN" forState:UIControlStateNormal];
+        [_vpnToggleButton setTitle:@"⏹ DỪNG GỬI TÚI TIN" forState:UIControlStateNormal];
         _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.85 green:0.15 blue:0.22 alpha:1.0];
     } else {
         _vpnStatusLabel.text = @"VPN: Đã dừng (Bình thường)";
         _vpnStatusLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
-        [_vpnToggleButton setTitle:@"🚀 BẬT FAKE LAG" forState:UIControlStateNormal];
+        [_vpnToggleButton setTitle:@"🚀 BẬT GỬI TÚI TIN RANDOM" forState:UIControlStateNormal];
         _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.18 green:0.20 blue:0.26 alpha:1.0];
     }
-    
-    _modeSegment.selectedSegmentIndex = [PacketEngine sharedEngine].currentMode;
 }
 
 - (void)toggleOverlayTapped {
@@ -395,7 +340,13 @@
 - (void)packetEngineDidUpdateStatsWithPackets:(NSUInteger)totalPackets bytes:(NSUInteger)totalBytes packetsSec:(NSUInteger)pps bytesSec:(NSUInteger)bps bufferedPkts:(NSUInteger)buffered {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.packetsValueLabel.text = [NSString stringWithFormat:@"%lu pkts", (unsigned long)totalPackets];
-        self.bufferedValueLabel.text = [NSString stringWithFormat:@"%lu pkts", (unsigned long)buffered];
+        
+        if (totalBytes > 1024 * 1024) {
+            self.bytesValueLabel.text = [NSString stringWithFormat:@"%.2f MB", totalBytes / (1024.0 * 1024.0)];
+        } else {
+            self.bytesValueLabel.text = [NSString stringWithFormat:@"%.1f KB", totalBytes / 1024.0];
+        }
+        
         self.ppsValueLabel.text = [NSString stringWithFormat:@"%lu pps", (unsigned long)pps];
         
         if (bps > 1024 * 1024) {
