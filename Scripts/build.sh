@@ -53,6 +53,8 @@ $CC $CFLAGS $FRAMEWORKS \
     "$ROOT_DIR/FakeLag/Managers/HUDLauncher.m" \
     "$ROOT_DIR/FakeLag/Managers/VPNManager.m" \
     "$ROOT_DIR/FakeLag/Managers/PacketEngine.m" \
+    "$ROOT_DIR/FakeLagHUD/HUDWindow.m" \
+    "$ROOT_DIR/FakeLagHUD/HUDViewController.m" \
     -I"$ROOT_DIR/FakeLag" \
     -I"$ROOT_DIR/FakeLag/Controllers" \
     -I"$ROOT_DIR/FakeLag/Managers" \
