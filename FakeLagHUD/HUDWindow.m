@@ -1,4 +1,5 @@
 #import "HUDWindow.h"
+#import "HUDViewController.h"
 #import <objc/runtime.h>
 
 @implementation HUDWindow
@@ -44,7 +45,6 @@
         }
     }
     
-    // Đăng ký với SBSAccessibilityWindowHostingController chuẩn TrollSpeed / External_ESP
     [self registerWithSpringBoardAccessibility];
 }
 
@@ -89,24 +89,32 @@
         return nil;
     }
     
-    // Chỉ bắt sự kiện chạm khi ngón tay chạm vào nút tròn nổi
-    if (self.floatingButtonView && !self.floatingButtonView.isHidden && self.floatingButtonView.userInteractionEnabled) {
-        CGPoint buttonPoint = [self.floatingButtonView convertPoint:point fromView:self];
-        if ([self.floatingButtonView pointInside:buttonPoint withEvent:event]) {
-            UIView *hit = [self.floatingButtonView hitTest:buttonPoint withEvent:event];
-            if (hit) return hit;
-            return self.floatingButtonView;
+    UIView *targetView = self.floatingButtonView;
+    if (!targetView && [self.rootViewController isKindOfClass:[HUDViewController class]]) {
+        targetView = [(HUDViewController *)self.rootViewController floatingContainer];
+        self.floatingButtonView = targetView;
+    }
+    
+    if (targetView && !targetView.isHidden && targetView.userInteractionEnabled) {
+        CGPoint p = [targetView convertPoint:point fromView:self];
+        if ([targetView pointInside:p withEvent:event]) {
+            return targetView;
         }
     }
     
-    // Bỏ qua và cho phép cảm ứng xuyên thấu qua màn hình game / app khác
     return nil;
 }
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    if (self.floatingButtonView && !self.floatingButtonView.isHidden) {
-        CGPoint buttonPoint = [self.floatingButtonView convertPoint:point fromView:self];
-        return [self.floatingButtonView pointInside:buttonPoint withEvent:event];
+    UIView *targetView = self.floatingButtonView;
+    if (!targetView && [self.rootViewController isKindOfClass:[HUDViewController class]]) {
+        targetView = [(HUDViewController *)self.rootViewController floatingContainer];
+        self.floatingButtonView = targetView;
+    }
+    
+    if (targetView && !targetView.isHidden && targetView.userInteractionEnabled) {
+        CGPoint p = [targetView convertPoint:point fromView:self];
+        return [targetView pointInside:p withEvent:event];
     }
     return NO;
 }
