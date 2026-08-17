@@ -1,0 +1,77 @@
+name: Build FakeLag TrollStore (.tipa)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package .tipa
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || true
+          xcodebuild -version
+
+      - name: Install ldid (TrollStore Signing Tool)
+        run: |
+          brew install ldid || brew install procursus/tap/ldid || true
+          which ldid || echo "ldid installed"
+
+      - name: Make Scripts Executable
+        run: |
+          chmod +x Scripts/*.sh
+
+      - name: Compile and Package TrollStore App (.tipa)
+        run: |
+          ./Scripts/build.sh
+
+      - name: Upload .tipa Artifact to GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: FakeLag-TrollStore
+          path: |
+            output/FakeLag.tipa
+            output/FakeLag.ipa
+          retention-days: 30
+
+      - name: Create GitHub Release (If tagged or dispatch)
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/FakeLag.tipa
+            output/FakeLag.ipa
+          tag_name: ${{ github.ref_name || 'v1.0.0' }}
+          name: "FakeLag TrollStore Release ${{ github.ref_name || 'v1.0.0' }}"
+          body: |
+            ### ⚡ FakeLag for TrollStore (.tipa)
+            
+            Ứng dụng nổi overlay nút tròn "fakelag" ra ngoài màn hình tương tự TrollSpeed, hỗ trợ kéo thả, cấp quyền VPN thật và gửi gói tin ngẫu nhiên tạo fake lag.
+            
+            #### 📦 Tải Về & Cài Đặt:
+            - **[FakeLag.tipa](output/FakeLag.tipa)**: Mở bằng **TrollStore** để cài đặt.
+            
+            #### 🚀 Hướng Dẫn:
+            1. Cài đặt file `.tipa` qua TrollStore.
+            2. Mở app FakeLag -> Bấm **"BẬT NÚT NỔI OVERLAY"**.
+            3. Ra ngoài màn hình chính hoặc vào game, bạn sẽ thấy nút tròn xanh `fakelag`.
+            4. Kéo nút đến vị trí thuận tiện.
+            5. Bấm vào nút tròn: Lần đầu sẽ hiện bảng cấp quyền VPN hệ thống (ấn Allow). Khi bật, nút chuyển sang màu đỏ phát sáng và gửi gói tin random để tạo lag!
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

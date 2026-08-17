@@ -1,0 +1,382 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000001 /* main.m */; };
+		A1000002 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000002 /* AppDelegate.m */; };
+		A1000003 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000003 /* SceneDelegate.m */; };
+		A1000004 /* MainViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000004 /* MainViewController.m */; };
+		A1000005 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000005 /* SettingsViewController.m */; };
+		A1000006 /* HUDLauncher.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000006 /* HUDLauncher.m */; };
+		A1000007 /* VPNManager.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000007 /* VPNManager.m */; };
+		A1000008 /* PacketEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000008 /* PacketEngine.m */; };
+		A2000001 /* HUDmain.m in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* main.m */; };
+		A2000002 /* HUDAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* HUDAppDelegate.m */; };
+		A2000003 /* HUDWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* HUDWindow.m */; };
+		A2000004 /* HUDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* HUDViewController.m */; };
+		A2000005 /* VPNManager.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000007 /* VPNManager.m */; };
+		A2000006 /* PacketEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = B1000008 /* PacketEngine.m */; };
+		A3000001 /* PacketTunnelProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = B3000001 /* PacketTunnelProvider.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B1000000 /* FakeLag.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FakeLag.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1000001 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		B1000002 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		B1000003 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		B1000004 /* MainViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainViewController.m; sourceTree = "<group>"; };
+		B1000005 /* SettingsViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SettingsViewController.m; sourceTree = "<group>"; };
+		B1000006 /* HUDLauncher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HUDLauncher.m; sourceTree = "<group>"; };
+		B1000007 /* VPNManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VPNManager.m; sourceTree = "<group>"; };
+		B1000008 /* PacketEngine.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PacketEngine.m; sourceTree = "<group>"; };
+		B1000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1000010 /* FakeLag.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FakeLag.entitlements; sourceTree = "<group>"; };
+		B2000000 /* FakeLagHUD */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FakeLagHUD; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2000001 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		B2000002 /* HUDAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HUDAppDelegate.m; sourceTree = "<group>"; };
+		B2000003 /* HUDWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HUDWindow.m; sourceTree = "<group>"; };
+		B2000004 /* HUDViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HUDViewController.m; sourceTree = "<group>"; };
+		B2000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B3000000 /* FakeLagTunnel.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FakeLagTunnel.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3000001 /* PacketTunnelProvider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PacketTunnelProvider.m; sourceTree = "<group>"; };
+		B3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C1000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C2000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C3000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D0000001 = {
+			isa = PBXGroup;
+			children = (
+				D1000000 /* FakeLag */,
+				D2000000 /* FakeLagHUD */,
+				D3000000 /* FakeLagTunnel */,
+				D4000000 /* Entitlements */,
+				D5000000 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D1000000 /* FakeLag */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001 /* main.m */,
+				B1000002 /* AppDelegate.m */,
+				B1000003 /* SceneDelegate.m */,
+				B1000004 /* MainViewController.m */,
+				B1000005 /* SettingsViewController.m */,
+				B1000006 /* HUDLauncher.m */,
+				B1000007 /* VPNManager.m */,
+				B1000008 /* PacketEngine.m */,
+				B1000009 /* Info.plist */,
+			);
+			path = FakeLag;
+			sourceTree = "<group>";
+		};
+		D2000000 /* FakeLagHUD */ = {
+			isa = PBXGroup;
+			children = (
+				B2000001 /* main.m */,
+				B2000002 /* HUDAppDelegate.m */,
+				B2000003 /* HUDWindow.m */,
+				B2000004 /* HUDViewController.m */,
+				B2000005 /* Info.plist */,
+			);
+			path = FakeLagHUD;
+			sourceTree = "<group>";
+		};
+		D3000000 /* FakeLagTunnel */ = {
+			isa = PBXGroup;
+			children = (
+				B3000001 /* PacketTunnelProvider.m */,
+				B3000002 /* Info.plist */,
+			);
+			path = FakeLagTunnel;
+			sourceTree = "<group>";
+		};
+		D4000000 /* Entitlements */ = {
+			isa = PBXGroup;
+			children = (
+				B1000010 /* FakeLag.entitlements */,
+			);
+			path = Entitlements;
+			sourceTree = "<group>";
+		};
+		D5000000 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000 /* FakeLag.app */,
+				B2000000 /* FakeLagHUD */,
+				B3000000 /* FakeLagTunnel.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E1000000 /* FakeLag */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F1000000 /* Build configuration list for PBXNativeTarget "FakeLag" */;
+			buildPhases = (
+				C1000001 /* Frameworks */,
+				G1000001 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FakeLag;
+			productName = FakeLag;
+			productReference = B1000000 /* FakeLag.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E2000000 /* FakeLagHUD */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2000000 /* Build configuration list for PBXNativeTarget "FakeLagHUD" */;
+			buildPhases = (
+				C2000001 /* Frameworks */,
+				G2000001 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FakeLagHUD;
+			productName = FakeLagHUD;
+			productReference = B2000000 /* FakeLagHUD */;
+			productType = "com.apple.product-type.tool";
+		};
+		E3000000 /* FakeLagTunnel */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3000000 /* Build configuration list for PBXNativeTarget "FakeLagTunnel" */;
+			buildPhases = (
+				C3000001 /* Frameworks */,
+				G3000001 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FakeLagTunnel;
+			productName = FakeLagTunnel;
+			productReference = B3000000 /* FakeLagTunnel.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		00000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = F0000000 /* Build configuration list for PBXProject "FakeLag" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D0000001;
+			productRefGroup = D5000000 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E1000000 /* FakeLag */,
+				E2000000 /* FakeLagHUD */,
+				E3000000 /* FakeLagTunnel */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		G1000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001 /* main.m in Sources */,
+				A1000002 /* AppDelegate.m in Sources */,
+				A1000003 /* SceneDelegate.m in Sources */,
+				A1000004 /* MainViewController.m in Sources */,
+				A1000005 /* SettingsViewController.m in Sources */,
+				A1000006 /* HUDLauncher.m in Sources */,
+				A1000007 /* VPNManager.m in Sources */,
+				A1000008 /* PacketEngine.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		G2000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2000001 /* HUDmain.m in Sources */,
+				A2000002 /* HUDAppDelegate.m in Sources */,
+				A2000003 /* HUDWindow.m in Sources */,
+				A2000004 /* HUDViewController.m in Sources */,
+				A2000005 /* VPNManager.m in Sources */,
+				A2000006 /* PacketEngine.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		G3000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3000001 /* PacketTunnelProvider.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		H0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		H0000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		H1000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLag/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		H1000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLag/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		H2000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLagHUD/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app.hud;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		H2000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLagHUD/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app.hud;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		H3000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLagTunnel/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app.tunnel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		H3000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = FakeLagTunnel/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fakelag.app.tunnel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F0000000 /* Build configuration list for PBXProject "FakeLag" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H0000001 /* Debug */,
+				H0000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F1000000 /* Build configuration list for PBXNativeTarget "FakeLag" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H1000001 /* Debug */,
+				H1000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2000000 /* Build configuration list for PBXNativeTarget "FakeLagHUD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H2000001 /* Debug */,
+				H2000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3000000 /* Build configuration list for PBXNativeTarget "FakeLagTunnel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				H3000001 /* Debug */,
+				H3000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 00000001 /* Project object */;
+}
