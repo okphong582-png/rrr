@@ -81,7 +81,8 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
         NETunnelProviderSession *session = (NETunnelProviderSession *)self.tunnelManager.connection;
         if (session.status == NEVPNStatusConnected) {
             NSData *data = [cmd dataUsingEncoding:NSUTF8StringEncoding];
-            [session sendProviderMessage:data responseHandler:^(NSData * _Nullable responseData) {
+            NSError *msgErr = nil;
+            [session sendProviderMessage:data returnError:&msgErr responseHandler:^(NSData * _Nullable responseData) {
                 // Done
             }];
         }
