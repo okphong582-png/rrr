@@ -274,16 +274,31 @@
         [_startOverlayButton setTitleColor:[UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0] forState:UIControlStateNormal];
     }
     
+    BOOL isConfigured = [VPNManager sharedManager].isConfigured;
+    BOOL isConnected = [VPNManager sharedManager].isVPNConnected;
     BOOL isLag = [VPNManager sharedManager].isLagActive;
-    if (isLag) {
-        _vpnStatusLabel.text = @"VPN: ĐANG GỬI TÚI TIN RANDOM LIÊN TỤC";
-        _vpnStatusLabel.textColor = [UIColor colorWithRed:1.0 green:0.25 blue:0.35 alpha:1.0];
-        [_vpnToggleButton setTitle:@"⏹ DỪNG GỬI TÚI TIN" forState:UIControlStateNormal];
-        _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.85 green:0.15 blue:0.22 alpha:1.0];
-    } else {
-        _vpnStatusLabel.text = @"VPN: Đã dừng (Bình thường)";
+    
+    if (!isConfigured) {
+        _vpnStatusLabel.text = @"VPN: Chưa cấp quyền cấu hình";
         _vpnStatusLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
-        [_vpnToggleButton setTitle:@"🚀 BẬT GỬI TÚI TIN RANDOM" forState:UIControlStateNormal];
+        [_vpnToggleButton setTitle:@"🛡️ CẤP QUYỀN & KẾT NỐI VPN" forState:UIControlStateNormal];
+        _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.55 blue:0.95 alpha:1.0];
+    } else if (isConnected) {
+        if (isLag) {
+            _vpnStatusLabel.text = @"🟢 VPN ĐANG CHẠY • ⚡ ĐANG BẮN GÓI TIN / FREEZE";
+            _vpnStatusLabel.textColor = [UIColor colorWithRed:0.2 green:0.95 blue:0.55 alpha:1.0];
+            [_vpnToggleButton setTitle:@"⏸ TẠM DỪNG GỬI TÚI TIN" forState:UIControlStateNormal];
+            _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.85 green:0.20 blue:0.25 alpha:1.0];
+        } else {
+            _vpnStatusLabel.text = @"🟢 VPN ĐANG CHẠY (BIỂU TƯỢNG VPN ĐANG HIỆN)";
+            _vpnStatusLabel.textColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0];
+            [_vpnToggleButton setTitle:@"⚡ BẬT FAKELAG QUA VPN" forState:UIControlStateNormal];
+            _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.75 blue:0.40 alpha:1.0];
+        }
+    } else {
+        _vpnStatusLabel.text = @"VPN: Đã ngắt kết nối";
+        _vpnStatusLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
+        [_vpnToggleButton setTitle:@"▶ KẾT NỐI LẠI VPN" forState:UIControlStateNormal];
         _vpnToggleButton.backgroundColor = [UIColor colorWithRed:0.18 green:0.20 blue:0.26 alpha:1.0];
     }
 }
@@ -295,18 +310,30 @@
 
 - (void)toggleVPNTapped {
     __weak typeof(self) weakSelf = self;
-    [[VPNManager sharedManager] toggleVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (error) {
-                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Lỗi Cấp Quyền VPN"
-                                                                               message:error.localizedDescription
-                                                                        preferredStyle:UIAlertControllerStyleAlert];
-                [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-                [weakSelf presentViewController:alert animated:YES completion:nil];
-            }
-            [weakSelf refreshState];
-        });
-    }];
+    
+    if (![VPNManager sharedManager].isConfigured) {
+        [[VPNManager sharedManager] requestVPNPermissionWithCompletion:^(BOOL success, NSError * _Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (error) {
+                    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Lỗi Cấp Quyền VPN"
+                                                                                   message:error.localizedDescription
+                                                                            preferredStyle:UIAlertControllerStyleAlert];
+                    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+                    [weakSelf presentViewController:alert animated:YES completion:nil];
+                }
+                [weakSelf refreshState];
+            });
+        }];
+    } else if (![VPNManager sharedManager].isVPNConnected) {
+        [[VPNManager sharedManager] startVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf refreshState];
+            });
+        }];
+    } else {
+        [[VPNManager sharedManager] toggleLagMode];
+        [self refreshState];
+    }
 }
 
 - (void)rateSliderChanged:(UISlider *)sender {

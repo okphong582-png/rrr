@@ -24,6 +24,7 @@ typedef NS_ENUM(NSInteger, FakeLagVPNState) {
 
 @property (nonatomic, weak) id<VPNManagerDelegate> delegate;
 @property (nonatomic, readonly) FakeLagVPNState currentState;
+@property (nonatomic, readonly) BOOL isVPNConnected;
 @property (nonatomic, readonly) BOOL isLagActive;
 @property (nonatomic, readonly) BOOL isConfigured;
 
@@ -35,6 +36,10 @@ typedef NS_ENUM(NSInteger, FakeLagVPNState) {
 - (void)stopVPN;
 - (void)stopVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion;
 - (void)toggleVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion;
+
+// Bật / Tắt gửi túi tin & freeze qua luồng VPN đang chạy
+- (void)setLagEnabled:(BOOL)enabled;
+- (void)toggleLagMode;
 
 @end
 

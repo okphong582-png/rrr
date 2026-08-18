@@ -284,17 +284,15 @@ static NSString * const kSavedPosYKey = @"FakeLag_Toggle_Y";
 
 - (void)handleToggleStateChanged:(BOOL)isOn {
     if (isOn) {
-        [[VPNManager sharedManager] startVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
-            if (error) {
-                NSLog(@"[HUD] Lỗi bật VPN: %@", error.localizedDescription);
-            }
-        }];
+        if (![VPNManager sharedManager].isVPNConnected) {
+            [[VPNManager sharedManager] startVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
+                [[VPNManager sharedManager] setLagEnabled:YES];
+            }];
+        } else {
+            [[VPNManager sharedManager] setLagEnabled:YES];
+        }
     } else {
-        [[VPNManager sharedManager] stopVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
-            if (error) {
-                NSLog(@"[HUD] Lỗi tắt VPN: %@", error.localizedDescription);
-            }
-        }];
+        [[VPNManager sharedManager] setLagEnabled:NO];
     }
 }
 

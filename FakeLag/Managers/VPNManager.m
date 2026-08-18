@@ -4,7 +4,9 @@
 
 NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnstatechanged";
 
-@interface VPNManager ()
+@interface VPNManager () {
+    BOOL _isLagEnabled;
+}
 
 @property (nonatomic, strong) NETunnelProviderManager *tunnelManager;
 @property (nonatomic, readwrite) FakeLagVPNState currentState;
@@ -28,6 +30,7 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
     if (self) {
         _currentState = FakeLagVPNStateNotConfigured;
         _isConfigured = NO;
+        _isLagEnabled = NO;
         [self setupNotifications];
         [self loadTunnelManager:nil];
     }
@@ -46,8 +49,43 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
                                                object:nil];
 }
 
+- (BOOL)isVPNConnected {
+    return (self.currentState == FakeLagVPNStateConnected);
+}
+
 - (BOOL)isLagActive {
-    return (_currentState == FakeLagVPNStateConnected) || [[PacketEngine sharedEngine] isRunning];
+    return _isLagEnabled;
+}
+
+- (void)setLagEnabled:(BOOL)enabled {
+    _isLagEnabled = enabled;
+    
+    NSString *cmd = enabled ? @"FREEZE_ON" : @"FREEZE_OFF";
+    [self sendTunnelCommand:cmd];
+    
+    if (enabled) {
+        [[PacketEngine sharedEngine] start];
+    } else {
+        [[PacketEngine sharedEngine] stop];
+    }
+    
+    [self notifyStateChanged];
+}
+
+- (void)toggleLagMode {
+    [self setLagEnabled:!_isLagEnabled];
+}
+
+- (void)sendTunnelCommand:(NSString *)cmd {
+    if (self.tunnelManager && [self.tunnelManager.connection isKindOfClass:[NETunnelProviderSession class]]) {
+        NETunnelProviderSession *session = (NETunnelProviderSession *)self.tunnelManager.connection;
+        if (session.status == NEVPNStatusConnected) {
+            NSData *data = [cmd dataUsingEncoding:NSUTF8StringEncoding];
+            [session sendProviderMessage:data responseHandler:^(NSData * _Nullable responseData) {
+                // Done
+            }];
+        }
+    }
 }
 
 - (void)loadTunnelManager:(void(^ _Nullable)(BOOL loaded))completion {
@@ -139,7 +177,11 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
                         weakSelf.tunnelManager = manager;
                         weakSelf.isConfigured = YES;
                         [weakSelf updateStateFromNEStatus:manager.connection.status];
-                        if (completion) completion(YES, nil);
+                        
+                        // TỰ ĐỘNG BẬT KẾT NỐI VPN NGAY SAU KHI CẤP QUYỀN THÀNH CÔNG!
+                        [weakSelf performStartVPNWithCompletion:^(BOOL startSuccess, NSError * _Nullable startErr) {
+                            if (completion) completion(YES, nil);
+                        }];
                     });
                 }];
             });
@@ -183,13 +225,9 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
         
         BOOL started = [weakSelf.tunnelManager.connection startVPNTunnelWithOptions:options andReturnError:&startError];
         
-        // Also start in-process packet generator engine for maximum lag impact
-        [[PacketEngine sharedEngine] start];
-        
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!started && startError) {
                 NSLog(@"[VPNManager] Failed to start tunnel: %@", startError.localizedDescription);
-                // Even if NetworkExtension extension is in progress or fallback, packet engine is running
                 weakSelf.currentState = FakeLagVPNStateConnected;
                 [weakSelf notifyStateChanged];
                 if (completion) completion(YES, nil);
@@ -211,7 +249,7 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
         [self.tunnelManager.connection stopVPNTunnel];
     }
     
-    // Stop packet engine
+    _isLagEnabled = NO;
     [[PacketEngine sharedEngine] stop];
     
     self.currentState = FakeLagVPNStateDisconnected;
@@ -225,9 +263,8 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
 }
 
 - (void)toggleVPNWithCompletion:(void(^ _Nullable)(BOOL success, NSError * _Nullable error))completion {
-    if (self.isLagActive) {
-        [self stopVPN];
-        if (completion) completion(YES, nil);
+    if (self.currentState == FakeLagVPNStateConnected) {
+        [self stopVPNWithCompletion:completion];
     } else {
         [self startVPNWithCompletion:completion];
     }
@@ -245,68 +282,58 @@ NSString * const FakeLagVPNStateChangedDarwinNotification = @"com.fakelag.vpnsta
 }
 
 - (void)updateStateFromNEStatus:(NEVPNStatus)status {
+    FakeLagVPNState newState;
+    NSString *statusStr = @"";
+    
     switch (status) {
         case NEVPNStatusInvalid:
-            _currentState = _isConfigured ? FakeLagVPNStateDisconnected : FakeLagVPNStateNotConfigured;
+            newState = FakeLagVPNStateNotConfigured;
+            statusStr = @"Chưa cấu hình";
             break;
         case NEVPNStatusDisconnected:
-            _currentState = FakeLagVPNStateDisconnected;
-            if ([[PacketEngine sharedEngine] isRunning]) {
-                [[PacketEngine sharedEngine] stop];
-            }
+            newState = FakeLagVPNStateDisconnected;
+            statusStr = @"Đã ngắt kết nối";
             break;
         case NEVPNStatusConnecting:
-            _currentState = FakeLagVPNStateConnecting;
+            newState = FakeLagVPNStateConnecting;
+            statusStr = @"Đang kết nối...";
             break;
         case NEVPNStatusConnected:
-            _currentState = FakeLagVPNStateConnected;
-            if (![[PacketEngine sharedEngine] isRunning]) {
-                [[PacketEngine sharedEngine] start];
-            }
+            newState = FakeLagVPNStateConnected;
+            statusStr = @"VPN ĐANG CHẠY (SẴN SÀNG)";
             break;
         case NEVPNStatusReasserting:
-            _currentState = FakeLagVPNStateConnecting;
+            newState = FakeLagVPNStateConnecting;
+            statusStr = @"Đang duy trì kết nối...";
             break;
         case NEVPNStatusDisconnecting:
-            _currentState = FakeLagVPNStateDisconnecting;
+            newState = FakeLagVPNStateDisconnecting;
+            statusStr = @"Đang ngắt...";
+            break;
+        default:
+            newState = FakeLagVPNStateDisconnected;
+            statusStr = @"Không xác định";
             break;
     }
+    
+    self.currentState = newState;
+    
+    if ([self.delegate respondsToSelector:@selector(vpnManagerDidChangeState:statusString:)]) {
+        [self.delegate vpnManagerDidChangeState:newState statusString:statusStr];
+    }
+    
     [self notifyStateChanged];
 }
 
 - (void)notifyStateChanged {
-    NSString *statusStr = [self stringForCurrentState];
-    
-    // Post Darwin notification for HUD process
-    notify_post([FakeLagVPNStateChangedDarwinNotification UTF8String]);
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                         (__bridge CFStringRef)FakeLagVPNStateChangedDarwinNotification,
-                                         NULL,
-                                         NULL,
-                                         YES);
-    
     dispatch_async(dispatch_get_main_queue(), ^{
-        if ([self.delegate respondsToSelector:@selector(vpnManagerDidChangeState:statusString:)]) {
-            [self.delegate vpnManagerDidChangeState:self.currentState statusString:statusStr];
-        }
+        notify_post([FakeLagVPNStateChangedDarwinNotification UTF8String]);
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"FakeLagLocalVPNStateChanged" object:self];
     });
 }
 
-- (NSString *)stringForCurrentState {
-    switch (_currentState) {
-        case FakeLagVPNStateNotConfigured:
-            return @"Chưa Cấu Hình VPN (Cần cấp quyền)";
-        case FakeLagVPNStateDisconnected:
-            return @"Đã Sẵn Sàng (Lag Tắt)";
-        case FakeLagVPNStateConnecting:
-            return @"Đang Kết Nối VPN...";
-        case FakeLagVPNStateConnected:
-            return @"Đang Bật Fake Lag (Gửi Gói Tin...)";
-        case FakeLagVPNStateDisconnecting:
-            return @"Đang Ngắt Kết Nối...";
-        case FakeLagVPNStateError:
-            return @"Lỗi VPN";
-    }
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end
