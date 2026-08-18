@@ -4,29 +4,29 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <notify.h>
 
-static NSString * const kSavedPosXKey = @"FakeLag_Button_X";
-static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
+static NSString * const kSavedPosXKey = @"FakeLag_Toggle_X";
+static NSString * const kSavedPosYKey = @"FakeLag_Toggle_Y";
 
-@interface DraggableFloatingButton : UIView
+// ============================================================
+// WIDGET CÔNG TẮC GẠT IOS TOGGLE (APPLE SWITCH STYLE)
+// ============================================================
+@interface DraggableIOSToggleWidget : UIView
 
-@property (nonatomic, copy) void (^tapHandler)(void);
-@property (nonatomic, copy) void (^longPressHandler)(void);
+@property (nonatomic, copy) void (^toggleHandler)(BOOL isOn);
+@property (nonatomic, strong) UIView *capsuleTrack;
+@property (nonatomic, strong) UIView *knobView;
 @property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) CALayer *pulseLayer;
-@property (nonatomic, strong) UIView *innerCircle;
-@property (nonatomic, assign) BOOL isLagActive;
+@property (nonatomic, assign) BOOL isOn;
 @property (nonatomic, assign) BOOL isDragging;
-@property (nonatomic, assign) BOOL longPressTriggered;
 
-- (void)setLagActive:(BOOL)active animated:(BOOL)animated;
+- (void)setOn:(BOOL)on animated:(BOOL)animated;
 
 @end
 
-@implementation DraggableFloatingButton {
+@implementation DraggableIOSToggleWidget {
     CGPoint _startTouchPoint;
     CGPoint _startCenter;
     NSTimeInterval _touchStartTime;
-    NSTimer *_longPressTimer;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -37,41 +37,45 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
         self.userInteractionEnabled = YES;
         self.multipleTouchEnabled = NO;
         
-        CGFloat size = frame.size.width;
+        // 1. Thân công tắc hình viên thuốc (Capsule Track: 60x32 pt)
+        _capsuleTrack = [[UIView alloc] initWithFrame:CGRectMake(2, 0, 60, 32)];
+        _capsuleTrack.layer.cornerRadius = 16.0;
+        _capsuleTrack.clipsToBounds = NO;
+        _capsuleTrack.backgroundColor = [UIColor colorWithRed:0.18 green:0.20 blue:0.24 alpha:0.95]; // Xám tối Apple khi TẮT
+        _capsuleTrack.layer.borderWidth = 1.5;
+        _capsuleTrack.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.20].CGColor;
+        _capsuleTrack.userInteractionEnabled = NO;
         
-        // 1. Lớp sóng Radar Pulse
-        _pulseLayer = [CALayer layer];
-        _pulseLayer.frame = CGRectMake(-10, -10, size + 20, size + 20);
-        _pulseLayer.cornerRadius = (size + 20) / 2.0;
-        _pulseLayer.backgroundColor = [UIColor colorWithRed:1.0 green:0.15 blue:0.25 alpha:0.45].CGColor;
-        _pulseLayer.opacity = 0.0;
-        [self.layer addSublayer:_pulseLayer];
+        // Đổ bóng phát sáng cho thân công tắc
+        _capsuleTrack.layer.shadowOffset = CGSizeMake(0, 3);
+        _capsuleTrack.layer.shadowOpacity = 0.5;
+        _capsuleTrack.layer.shadowRadius = 6.0;
+        _capsuleTrack.layer.shadowColor = [UIColor blackColor].CGColor;
+        [self addSubview:_capsuleTrack];
         
-        // 2. Nút tròn chính
-        _innerCircle = [[UIView alloc] initWithFrame:CGRectMake(0, 0, size, size)];
-        _innerCircle.layer.cornerRadius = size / 2.0;
-        _innerCircle.clipsToBounds = YES;
-        _innerCircle.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0]; // Xanh Neon
-        _innerCircle.layer.borderWidth = 2.5;
-        _innerCircle.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
-        _innerCircle.userInteractionEnabled = NO;
+        // 2. Chấm tròn trượt (Knob: 26x26 pt)
+        _knobView = [[UIView alloc] initWithFrame:CGRectMake(3, 3, 26, 26)];
+        _knobView.layer.cornerRadius = 13.0;
+        _knobView.backgroundColor = [UIColor colorWithWhite:0.96 alpha:1.0];
+        _knobView.layer.shadowColor = [UIColor blackColor].CGColor;
+        _knobView.layer.shadowOffset = CGSizeMake(0, 2);
+        _knobView.layer.shadowRadius = 3.0;
+        _knobView.layer.shadowOpacity = 0.35;
+        _knobView.userInteractionEnabled = NO;
+        [_capsuleTrack addSubview:_knobView];
         
-        // Đổ bóng phát sáng
-        self.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.90 blue:0.45 alpha:0.7].CGColor;
-        self.layer.shadowOffset = CGSizeMake(0, 4);
-        self.layer.shadowRadius = 8.0;
-        self.layer.shadowOpacity = 0.8;
-        
-        // 3. Nhãn chữ hiển thị "fakelag" / "LAG ON"
-        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, size, size)];
+        // 3. Nhãn chữ "fakelag" sắc nét, phông chữ đẹp ngay dưới nút
+        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 35, 64, 16)];
         _titleLabel.text = @"fakelag";
-        _titleLabel.textColor = [UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0];
-        _titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightHeavy];
+        _titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightBold];
+        _titleLabel.textColor = [UIColor colorWithWhite:0.92 alpha:1.0];
         _titleLabel.textAlignment = NSTextAlignmentCenter;
+        _titleLabel.layer.shadowColor = [UIColor blackColor].CGColor;
+        _titleLabel.layer.shadowOffset = CGSizeMake(0, 1);
+        _titleLabel.layer.shadowRadius = 2.0;
+        _titleLabel.layer.shadowOpacity = 0.8;
         _titleLabel.userInteractionEnabled = NO;
-        [_innerCircle addSubview:_titleLabel];
-        
-        [self addSubview:_innerCircle];
+        [self addSubview:_titleLabel];
     }
     return self;
 }
@@ -81,29 +85,11 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     _startTouchPoint = [touch locationInView:self.window];
     _startCenter = self.center;
     self.isDragging = NO;
-    self.longPressTriggered = NO;
     _touchStartTime = [NSDate timeIntervalSinceReferenceDate];
     
-    // Haptic feedback nhẹ khi chạm vào nút
-    UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
-    [generator impactOccurred];
-    
-    // Bắt đầu timer cho Long Press (nhấn giữ 0.7s)
-    [_longPressTimer invalidate];
-    __weak typeof(self) weakSelf = self;
-    _longPressTimer = [NSTimer scheduledTimerWithTimeInterval:0.7 repeats:NO block:^(NSTimer * _Nonnull timer) {
-        __strong DraggableFloatingButton *strongSelf = weakSelf;
-        if (strongSelf && !strongSelf.isDragging) {
-            strongSelf.longPressTriggered = YES;
-            AudioServicesPlaySystemSound(1520);
-            if (strongSelf.longPressHandler) {
-                strongSelf.longPressHandler();
-            }
-        }
-    }];
-    
+    // Nhấn xuống thu nhỏ nhẹ tạo cảm giác bấm đàn hồi
     [UIView animateWithDuration:0.12 animations:^{
-        self.transform = CGAffineTransformMakeScale(0.92, 0.92);
+        self.transform = CGAffineTransformMakeScale(0.93, 0.93);
         self.alpha = 0.92;
     }];
 }
@@ -115,21 +101,21 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     CGFloat dx = currentPoint.x - _startTouchPoint.x;
     CGFloat dy = currentPoint.y - _startTouchPoint.y;
     
-    if (hypot(dx, dy) > 8.0) {
+    if (hypot(dx, dy) > 6.0) {
         self.isDragging = YES;
-        [_longPressTimer invalidate];
-        _longPressTimer = nil;
     }
     
     if (self.isDragging) {
         CGPoint newCenter = CGPointMake(_startCenter.x + dx, _startCenter.y + dy);
         
         CGRect screenBounds = [UIScreen mainScreen].bounds;
-        CGFloat radius = self.bounds.size.width / 2.0;
-        CGFloat minX = radius + 6;
-        CGFloat maxX = screenBounds.size.width - radius - 6;
-        CGFloat minY = radius + 40;
-        CGFloat maxY = screenBounds.size.height - radius - 30;
+        CGFloat halfW = self.bounds.size.width / 2.0;
+        CGFloat halfH = self.bounds.size.height / 2.0;
+        
+        CGFloat minX = halfW + 6;
+        CGFloat maxX = screenBounds.size.width - halfW - 6;
+        CGFloat minY = halfH + 40;
+        CGFloat maxY = screenBounds.size.height - halfH - 30;
         
         newCenter.x = MAX(minX, MIN(maxX, newCenter.x));
         newCenter.y = MAX(minY, MIN(maxY, newCenter.y));
@@ -139,32 +125,33 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 }
 
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    [_longPressTimer invalidate];
-    _longPressTimer = nil;
-    
     [UIView animateWithDuration:0.15 animations:^{
         self.transform = CGAffineTransformIdentity;
         self.alpha = 1.0;
     }];
     
-    if (self.longPressTriggered) return;
-    
     if (!self.isDragging) {
-        // === SỰ KIỆN CHẠM (TAP): BẬT/TẮT FAKELAG NGAY LẬP TỨC ===
-        if (self.tapHandler) {
-            self.tapHandler();
+        // === CHẠM VÀO TOGGLE: GẠT BẬT / TẮT ===
+        BOOL newState = !self.isOn;
+        [self setOn:newState animated:YES];
+        
+        UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
+        [feedback impactOccurred];
+        
+        if (self.toggleHandler) {
+            self.toggleHandler(newState);
         }
     } else {
-        // === SỰ KIỆN KÉO (DRAG): TỰ ĐỘNG BÁM DÍNH VIỀN MÀN HÌNH ===
+        // === THẢ TAY SAU KHI KÉO: TỰ ĐỘNG BÁM MẶT VIỀN TRÁI / PHẢI ===
         CGRect screenBounds = [UIScreen mainScreen].bounds;
-        CGFloat radius = self.bounds.size.width / 2.0;
-        CGFloat screenWidth = screenBounds.size.width;
+        CGFloat halfW = self.bounds.size.width / 2.0;
+        CGFloat screenW = screenBounds.size.width;
         
         CGPoint finalCenter = self.center;
-        if (finalCenter.x < screenWidth / 2.0) {
-            finalCenter.x = radius + 10.0;
+        if (finalCenter.x < screenW / 2.0) {
+            finalCenter.x = halfW + 10.0;
         } else {
-            finalCenter.x = screenWidth - radius - 10.0;
+            finalCenter.x = screenW - halfW - 10.0;
         }
         
         [UIView animateWithDuration:0.35
@@ -183,79 +170,70 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 }
 
 - (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    [_longPressTimer invalidate];
-    _longPressTimer = nil;
-    
     [UIView animateWithDuration:0.15 animations:^{
         self.transform = CGAffineTransformIdentity;
         self.alpha = 1.0;
     }];
 }
 
-- (void)setLagActive:(BOOL)active animated:(BOOL)animated {
-    _isLagActive = active;
+- (void)setOn:(BOOL)on animated:(BOOL)animated {
+    _isOn = on;
     
-    void (^updateBlock)(void) = ^{
-        if (active) {
-            self.innerCircle.backgroundColor = [UIColor colorWithRed:0.95 green:0.15 blue:0.25 alpha:1.0]; // Đỏ rực
-            self.innerCircle.layer.borderColor = [UIColor colorWithRed:1.0 green:0.80 blue:0.80 alpha:1.0].CGColor;
-            self.titleLabel.text = @"LAG ON";
-            self.titleLabel.textColor = [UIColor whiteColor];
-            self.layer.shadowColor = [UIColor colorWithRed:1.0 green:0.10 blue:0.20 alpha:0.9].CGColor;
+    void (^animations)(void) = ^{
+        if (on) {
+            // === TRẠNG THÁI BẬT: XANH LÁ NEON / NÚT GẠT SANG PHẢI ===
+            self.capsuleTrack.backgroundColor = [UIColor colorWithRed:0.13 green:0.80 blue:0.42 alpha:1.0]; // #22c55e Apple Green
+            self.capsuleTrack.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.80].CGColor;
+            self.capsuleTrack.layer.shadowColor = [UIColor colorWithRed:0.13 green:0.80 blue:0.42 alpha:0.85].CGColor;
+            self.capsuleTrack.layer.shadowRadius = 9.0;
             
-            [self startPulseAnimation];
-        } else {
-            self.innerCircle.backgroundColor = [UIColor colorWithRed:0.0 green:0.88 blue:0.45 alpha:1.0]; // Xanh Neon
-            self.innerCircle.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+            // Trượt sang phải
+            self.knobView.frame = CGRectMake(31, 3, 26, 26);
+            self.knobView.backgroundColor = [UIColor whiteColor];
+            
+            // Nhãn chữ bên dưới đổi màu phát sáng
             self.titleLabel.text = @"fakelag";
-            self.titleLabel.textColor = [UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0];
-            self.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.90 blue:0.45 alpha:0.7].CGColor;
+            self.titleLabel.textColor = [UIColor colorWithRed:0.25 green:0.95 blue:0.55 alpha:1.0];
+            self.titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
+        } else {
+            // === TRẠNG THÁI TẮT: XÁM TỐI / NÚT GẠT SANG TRÁI ===
+            self.capsuleTrack.backgroundColor = [UIColor colorWithRed:0.18 green:0.20 blue:0.24 alpha:0.95];
+            self.capsuleTrack.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.20].CGColor;
+            self.capsuleTrack.layer.shadowColor = [UIColor blackColor].CGColor;
+            self.capsuleTrack.layer.shadowRadius = 6.0;
             
-            [self stopPulseAnimation];
+            // Trượt về bên trái
+            self.knobView.frame = CGRectMake(3, 3, 26, 26);
+            self.knobView.backgroundColor = [UIColor colorWithWhite:0.96 alpha:1.0];
+            
+            // Nhãn chữ mặc định
+            self.titleLabel.text = @"fakelag";
+            self.titleLabel.textColor = [UIColor colorWithWhite:0.90 alpha:1.0];
+            self.titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightBold];
         }
     };
     
     if (animated) {
-        [UIView animateWithDuration:0.2 animations:updateBlock];
+        [UIView animateWithDuration:0.25
+                              delay:0
+             usingSpringWithDamping:0.80
+              initialSpringVelocity:0.6
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:animations
+                         completion:nil];
     } else {
-        updateBlock();
+        animations();
     }
-}
-
-- (void)startPulseAnimation {
-    [_pulseLayer removeAllAnimations];
-    _pulseLayer.opacity = 1.0;
-    
-    CABasicAnimation *scaleAnim = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-    scaleAnim.fromValue = @(1.0);
-    scaleAnim.toValue = @(1.35);
-    scaleAnim.duration = 0.8;
-    scaleAnim.repeatCount = HUGE_VALF;
-    scaleAnim.autoreverses = YES;
-    scaleAnim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-    
-    CABasicAnimation *opacityAnim = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    opacityAnim.fromValue = @(0.75);
-    opacityAnim.toValue = @(0.10);
-    opacityAnim.duration = 0.8;
-    opacityAnim.repeatCount = HUGE_VALF;
-    opacityAnim.autoreverses = YES;
-    opacityAnim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-    
-    [_pulseLayer addAnimation:scaleAnim forKey:@"scale"];
-    [_pulseLayer addAnimation:opacityAnim forKey:@"opacity"];
-}
-
-- (void)stopPulseAnimation {
-    [_pulseLayer removeAllAnimations];
-    _pulseLayer.opacity = 0.0;
 }
 
 @end
 
+// ============================================================
+// HUD VIEW CONTROLLER
+// ============================================================
 @interface HUDViewController () {
     int _notifyToken;
-    DraggableFloatingButton *_draggableButton;
+    DraggableIOSToggleWidget *_toggleWidget;
 }
 
 @end
@@ -279,42 +257,33 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
 }
 
 - (UIView *)floatingContainer {
-    return _draggableButton;
+    return _toggleWidget;
 }
 
-- (UIButton *)fakelagButton {
-    return nil;
+- (BOOL)isLagActive {
+    return _toggleWidget.isOn;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    CGFloat buttonSize = 68.0;
-    _draggableButton = [[DraggableFloatingButton alloc] initWithFrame:CGRectMake(30, 160, buttonSize, buttonSize)];
+    // Khởi tạo Toggle Widget kích thước chuẩn 64x54 pt
+    _toggleWidget = [[DraggableIOSToggleWidget alloc] initWithFrame:CGRectMake(30, 160, 64, 54)];
     
     __weak typeof(self) weakSelf = self;
-    _draggableButton.tapHandler = ^{
-        [weakSelf handleButtonTap];
+    _toggleWidget.toggleHandler = ^(BOOL isOn) {
+        [weakSelf handleToggleStateChanged:isOn];
     };
     
-    _draggableButton.longPressHandler = ^{
-        [weakSelf showHUDMenu];
-    };
-    
-    [self.view addSubview:_draggableButton];
+    [self.view addSubview:_toggleWidget];
     
     [self restoreLastSavedPosition];
     [self setupDarwinNotifications];
     [self refreshInitialState];
 }
 
-- (void)handleButtonTap {
-    UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
-    [generator impactOccurred];
-    
-    BOOL isLagNow = ![VPNManager sharedManager].isLagActive;
-    
-    if (isLagNow) {
+- (void)handleToggleStateChanged:(BOOL)isOn {
+    if (isOn) {
         [[VPNManager sharedManager] startVPNWithCompletion:^(BOOL success, NSError * _Nullable error) {
             if (error) {
                 NSLog(@"[HUD] Lỗi bật VPN: %@", error.localizedDescription);
@@ -327,56 +296,26 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
             }
         }];
     }
-    
-    [_draggableButton setLagActive:isLagNow animated:YES];
-}
-
-- (void)showHUDMenu {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"⚡ FAKELAG OVERLAY"
-                                                                   message:@"Tùy chọn nhanh:"
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    __weak typeof(self) weakSelf = self;
-    [alert addAction:[UIAlertAction actionWithTitle:@"🔄 Reset Vị Trí Về Mặc Định"
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(UIAlertAction * _Nonnull action) {
-        [UIView animateWithDuration:0.3 animations:^{
-            weakSelf.floatingContainer.center = CGPointMake(50, 180);
-            [[NSUserDefaults standardUserDefaults] setDouble:50 forKey:kSavedPosXKey];
-            [[NSUserDefaults standardUserDefaults] setDouble:180 forKey:kSavedPosYKey];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        }];
-    }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"❌ Ẩn Nút Nổi"
-                                              style:UIAlertActionStyleDestructive
-                                            handler:^(UIAlertAction * _Nonnull action) {
-        weakSelf.view.window.hidden = YES;
-    }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng"
-                                              style:UIAlertActionStyleCancel
-                                            handler:nil]];
-    
-    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)updateLagState:(BOOL)isActive animated:(BOOL)animated {
-    [_draggableButton setLagActive:isActive animated:animated];
+    [_toggleWidget setOn:isActive animated:animated];
 }
 
 - (void)setupDarwinNotifications {
     __weak typeof(self) weakSelf = self;
     notify_register_dispatch("com.fakelag.vpnstatechanged", &_notifyToken, dispatch_get_main_queue(), ^(int token) {
-        BOOL isLag = [VPNManager sharedManager].isLagActive;
-        [weakSelf.floatingContainer setNeedsDisplay];
-        [weakSelf updateLagState:isLag animated:YES];
+        __strong HUDViewController *strongSelf = weakSelf;
+        if (strongSelf) {
+            BOOL isLag = [VPNManager sharedManager].isLagActive;
+            [strongSelf updateLagState:isLag animated:YES];
+        }
     });
 }
 
 - (void)refreshInitialState {
     BOOL isLag = [VPNManager sharedManager].isLagActive;
-    [_draggableButton setLagActive:isLag animated:NO];
+    [_toggleWidget setOn:isLag animated:NO];
 }
 
 - (void)restoreLastSavedPosition {
@@ -386,9 +325,9 @@ static NSString * const kSavedPosYKey = @"FakeLag_Button_Y";
     CGRect screenBounds = [UIScreen mainScreen].bounds;
     if (savedX >= 35 && savedX <= screenBounds.size.width - 35 &&
         savedY >= 60 && savedY <= screenBounds.size.height - 60) {
-        _draggableButton.center = CGPointMake(savedX, savedY);
+        _toggleWidget.center = CGPointMake(savedX, savedY);
     } else {
-        _draggableButton.center = CGPointMake(50, 180);
+        _toggleWidget.center = CGPointMake(50, 180);
     }
 }
 

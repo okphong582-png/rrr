@@ -95,7 +95,7 @@
     [bannerView addSubview:titleLabel];
     
     UILabel *subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 42, width - 32, 24)];
-    subtitleLabel.text = @"Nổi Nút Tròn Xanh • Gửi Túi Tin Random Qua VPN";
+    subtitleLabel.text = @"Công Tắc Gạt iOS Toggle • Freeze Chu Kỳ 2s/0.5s";
     subtitleLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
     subtitleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [bannerView addSubview:subtitleLabel];
@@ -104,7 +104,7 @@
     currentY += 92.0;
     
     // 1. Overlay Control Card
-    _overlayCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 145) title:@"1. NÚT NỔI OVERLAY (TROLLSPEED)"];
+    _overlayCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 145) title:@"1. CÔNG TẮC GẠT OVERLAY (IOS TOGGLE)"];
     
     _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 44, width - 32, 22)];
     _overlayStatusLabel.text = @"Trạng Thái: Chưa kích hoạt";
@@ -116,7 +116,7 @@
     _startOverlayButton.frame = CGRectMake(16, 78, width - 32, 50);
     _startOverlayButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.42 alpha:1.0];
     _startOverlayButton.layer.cornerRadius = 12.0;
-    [_startOverlayButton setTitle:@"▶ BẬT NÚT NỔI OVERLAY" forState:UIControlStateNormal];
+    [_startOverlayButton setTitle:@"▶ BẬT CÔNG TẮC GẠT OVERLAY" forState:UIControlStateNormal];
     [_startOverlayButton setTitleColor:[UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0] forState:UIControlStateNormal];
     _startOverlayButton.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightBold];
     [_startOverlayButton addTarget:self action:@selector(toggleOverlayTapped) forControlEvents:UIControlEventTouchUpInside];
