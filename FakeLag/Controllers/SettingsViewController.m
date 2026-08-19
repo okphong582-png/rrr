@@ -13,10 +13,9 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.title = @"Cài Đặt Link URL (Local)";
+    self.title = @"Cài Đặt Link & Menu";
     self.view.backgroundColor = [UIColor colorWithRed:0.06 green:0.07 blue:0.10 alpha:1.0];
     
-    // Nút Lưu & Đóng
     UIBarButtonItem *saveBtn = [[UIBarButtonItem alloc] initWithTitle:@"Lưu & Xong"
                                                                 style:UIBarButtonItemStyleDone
                                                                target:self
@@ -43,7 +42,7 @@
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 5;
+    return 6;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -51,7 +50,8 @@
     if (section == 1) return 3; // FakeLag (On, Off, Test)
     if (section == 2) return 3; // TeleKill (On, Off, Test)
     if (section == 3) return 3; // Ghost (On, Off, Test)
-    if (section == 4) return 2; // Nút Nổi Overlay & Thông tin
+    if (section == 4) return 3; // Tùy chọn hiển thị từng tính năng trên menu
+    if (section == 5) return 2; // Nút Nổi Overlay & Thông tin
     return 0;
 }
 
@@ -60,7 +60,8 @@
     if (section == 1) return @"🧊 LINK FAKELAG (FREEZE ĐỊCH)";
     if (section == 2) return @"⚡ LINK TELEKILL (DỊCH CHUYỂN)";
     if (section == 3) return @"👻 LINK GHOST LAG (TÀNG HÌNH)";
-    if (section == 4) return @"🎛️ TÙY CHỈNH NÚT NỔI OVERLAY";
+    if (section == 4) return @"🎯 CHỌN TÍNH NĂNG HIỆN TRÊN MENU NỔI";
+    if (section == 5) return @"🎛️ TÙY CHỈNH NÚT NỔI OVERLAY";
     return nil;
 }
 
@@ -75,6 +76,7 @@
         cell.detailTextLabel.font = [UIFont systemFontOfSize:11.5];
         cell.detailTextLabel.numberOfLines = 2;
     }
+    cell.accessoryView = nil;
     
     RemoteLinkManager *mgr = [RemoteLinkManager sharedManager];
     
@@ -135,18 +137,56 @@
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
     } else if (indexPath.section == 4) {
+        // Section 4: Chọn tính năng hiển thị trên menu nổi
+        UISwitch *visSwitch = [[UISwitch alloc] init];
+        visSwitch.onTintColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.45 alpha:1.0];
+        
+        if (indexPath.row == 0) {
+            cell.textLabel.text = @"🧊 Hiện FakeLag (Freeze)";
+            cell.detailTextLabel.text = @"Bật/tắt hiển thị dòng FakeLag trên Menu Nổi";
+            visSwitch.on = mgr.showFakeLagInHUD;
+            [visSwitch addTarget:self action:@selector(toggleShowFakeLag:) forControlEvents:UIControlEventValueChanged];
+        } else if (indexPath.row == 1) {
+            cell.textLabel.text = @"⚡ Hiện TeleKill";
+            cell.detailTextLabel.text = @"Bật/tắt hiển thị dòng TeleKill trên Menu Nổi";
+            visSwitch.on = mgr.showTeleKillInHUD;
+            [visSwitch addTarget:self action:@selector(toggleShowTeleKill:) forControlEvents:UIControlEventValueChanged];
+        } else {
+            cell.textLabel.text = @"👻 Hiện Ghost Lag";
+            cell.detailTextLabel.text = @"Bật/tắt hiển thị dòng Ghost trên Menu Nổi";
+            visSwitch.on = mgr.showGhostInHUD;
+            [visSwitch addTarget:self action:@selector(toggleShowGhost:) forControlEvents:UIControlEventValueChanged];
+        }
+        cell.accessoryView = visSwitch;
+        cell.accessoryType = UITableViewCellAccessoryNone;
+    } else if (indexPath.section == 5) {
         if (indexPath.row == 0) {
             cell.textLabel.text = @"Đặt Lại Vị Trí Nút Nổi";
             cell.detailTextLabel.text = @"Đưa về vị trí mặc định ở góc màn hình";
             cell.accessoryType = UITableViewCellAccessoryNone;
         } else {
             cell.textLabel.text = @"Cơ Chế Hoạt Động";
-            cell.detailTextLabel.text = @"GET nội dung URL chuẩn iOS • Lưu trữ Local 100%";
+            cell.detailTextLabel.text = @"GET nội dung URL • Đồng bộ 2 chiều liên tiến trình 100%";
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
     }
     
     return cell;
+}
+
+- (void)toggleShowFakeLag:(UISwitch *)sender {
+    [RemoteLinkManager sharedManager].showFakeLagInHUD = sender.isOn;
+    [[RemoteLinkManager sharedManager] saveAllConfigs];
+}
+
+- (void)toggleShowTeleKill:(UISwitch *)sender {
+    [RemoteLinkManager sharedManager].showTeleKillInHUD = sender.isOn;
+    [[RemoteLinkManager sharedManager] saveAllConfigs];
+}
+
+- (void)toggleShowGhost:(UISwitch *)sender {
+    [RemoteLinkManager sharedManager].showGhostInHUD = sender.isOn;
+    [[RemoteLinkManager sharedManager] saveAllConfigs];
 }
 
 #pragma mark - UITableViewDelegate
@@ -215,10 +255,10 @@
         } else {
             [self testFeatureUrl:RemoteFeatureGhost];
         }
-    } else if (indexPath.section == 4) {
+    } else if (indexPath.section == 5) {
         if (indexPath.row == 0) {
-            [[NSUserDefaults standardUserDefaults] setDouble:105 forKey:@"HUD_Panel_PosX"];
-            [[NSUserDefaults standardUserDefaults] setDouble:200 forKey:@"HUD_Panel_PosY"];
+            [[NSUserDefaults standardUserDefaults] setDouble:115 forKey:@"HUD_Panel_PosX"];
+            [[NSUserDefaults standardUserDefaults] setDouble:220 forKey:@"HUD_Panel_PosY"];
             [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"HUD_Panel_IsMini"];
             [[NSUserDefaults standardUserDefaults] synchronize];
             [self showToast:@"Đã đặt lại vị trí nút nổi về mặc định!"];

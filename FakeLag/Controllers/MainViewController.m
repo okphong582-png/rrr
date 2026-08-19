@@ -2,6 +2,7 @@
 #import "SettingsViewController.h"
 #import "RemoteLinkManager.h"
 #import "HUDLauncher.h"
+#import <notify.h>
 
 @interface MainViewController () {
     UISwitch *_fakeLagSwitch;
@@ -15,6 +16,8 @@
     UITextField *_serverUrlField;
     UITextView *_logTextView;
     NSMutableArray<NSString *> *_logs;
+    
+    int _remoteNotifyToken;
 }
 
 @property (nonatomic, strong) UIScrollView *scrollView;
@@ -265,6 +268,14 @@
 }
 
 - (void)setupNotifications {
+    __weak typeof(self) weakSelf = self;
+    notify_register_dispatch("com.fakelag.remotestatechanged", &_remoteNotifyToken, dispatch_get_main_queue(), ^(int token) {
+        __strong MainViewController *strongSelf = weakSelf;
+        if (strongSelf) {
+            [strongSelf refreshState];
+        }
+    });
+    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(refreshState)
                                                  name:RemoteLinkStateChangedNotification
@@ -273,6 +284,8 @@
 
 - (void)refreshState {
     RemoteLinkManager *mgr = [RemoteLinkManager sharedManager];
+    [mgr loadAllConfigs];
+    
     [_fakeLagSwitch setOn:mgr.fakeLagConfig.isActive animated:YES];
     [_teleKillSwitch setOn:mgr.teleKillConfig.isActive animated:YES];
     [_ghostSwitch setOn:mgr.ghostConfig.isActive animated:YES];
@@ -337,6 +350,9 @@
 }
 
 - (void)dealloc {
+    if (_remoteNotifyToken > 0) {
+        notify_cancel(_remoteNotifyToken);
+    }
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 

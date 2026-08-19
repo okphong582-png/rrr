@@ -2,8 +2,12 @@
 #import <UIKit/UIKit.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import <notify.h>
+#import <sys/stat.h>
 
 NSString * const RemoteLinkStateChangedNotification = @"com.fakelag.remotestatechanged";
+
+static NSString * const kSharedPlistPath1 = @"/var/mobile/Library/Preferences/com.fakelag.shared.plist";
+static NSString * const kSharedPlistPath2 = @"/tmp/fakelag_shared_config.plist";
 
 static NSString * const kPrefKeyServerBaseUrl = @"Remote_ServerBaseUrl";
 static NSString * const kPrefKeyFakeLagOn     = @"Remote_FakeLag_UrlOn";
@@ -12,6 +16,14 @@ static NSString * const kPrefKeyTeleKillOn    = @"Remote_TeleKill_UrlOn";
 static NSString * const kPrefKeyTeleKillOff   = @"Remote_TeleKill_UrlOff";
 static NSString * const kPrefKeyGhostOn       = @"Remote_Ghost_UrlOn";
 static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
+
+static NSString * const kPrefKeyFakeLagActive = @"Remote_FakeLag_IsActive";
+static NSString * const kPrefKeyTeleKillActive= @"Remote_TeleKill_IsActive";
+static NSString * const kPrefKeyGhostActive   = @"Remote_Ghost_IsActive";
+
+static NSString * const kPrefKeyShowFakeLag   = @"Remote_Show_FakeLag";
+static NSString * const kPrefKeyShowTeleKill  = @"Remote_Show_TeleKill";
+static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
 
 @implementation RemoteFeatureConfig
 @end
@@ -49,16 +61,23 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
         _fakeLagConfig.type = RemoteFeatureFakeLag;
         _fakeLagConfig.name = @"FakeLag (Freeze)";
         _fakeLagConfig.icon = @"🧊";
+        _fakeLagConfig.isVisibleInHUD = YES;
         
         _teleKillConfig = [[RemoteFeatureConfig alloc] init];
         _teleKillConfig.type = RemoteFeatureTeleKill;
         _teleKillConfig.name = @"TeleKill";
         _teleKillConfig.icon = @"⚡";
+        _teleKillConfig.isVisibleInHUD = YES;
         
         _ghostConfig = [[RemoteFeatureConfig alloc] init];
         _ghostConfig.type = RemoteFeatureGhost;
         _ghostConfig.name = @"Ghost Lag";
         _ghostConfig.icon = @"👻";
+        _ghostConfig.isVisibleInHUD = YES;
+        
+        _showFakeLagInHUD = YES;
+        _showTeleKillInHUD = YES;
+        _showGhostInHUD = YES;
         
         [self loadAllConfigs];
     }
@@ -73,47 +92,112 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
     }
 }
 
+- (void)setShowFakeLagInHUD:(BOOL)showFakeLagInHUD {
+    _showFakeLagInHUD = showFakeLagInHUD;
+    self.fakeLagConfig.isVisibleInHUD = showFakeLagInHUD;
+}
+
+- (void)setShowTeleKillInHUD:(BOOL)showTeleKillInHUD {
+    _showTeleKillInHUD = showTeleKillInHUD;
+    self.teleKillConfig.isVisibleInHUD = showTeleKillInHUD;
+}
+
+- (void)setShowGhostInHUD:(BOOL)showGhostInHUD {
+    _showGhostInHUD = showGhostInHUD;
+    self.ghostConfig.isVisibleInHUD = showGhostInHUD;
+}
+
+- (NSDictionary *)readSharedDict {
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:kSharedPlistPath1];
+    if (!dict) {
+        dict = [NSDictionary dictionaryWithContentsOfFile:kSharedPlistPath2];
+    }
+    return dict;
+}
+
 - (void)loadAllConfigs {
+    NSDictionary *sharedDict = [self readSharedDict];
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
     
-    self.serverBaseUrl = [ud stringForKey:kPrefKeyServerBaseUrl] ?: @"http://127.0.0.1:20000";
+    id (^valForKey)(NSString *) = ^id(NSString *k) {
+        if (sharedDict && sharedDict[k] != nil) return sharedDict[k];
+        return [ud objectForKey:k];
+    };
     
-    self.fakeLagConfig.urlOn = [ud stringForKey:kPrefKeyFakeLagOn] ?: [NSString stringWithFormat:@"%@/freeze", self.serverBaseUrl];
-    self.fakeLagConfig.urlOff = [ud stringForKey:kPrefKeyFakeLagOff] ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    self.serverBaseUrl = valForKey(kPrefKeyServerBaseUrl) ?: @"http://127.0.0.1:20000";
     
-    self.teleKillConfig.urlOn = [ud stringForKey:kPrefKeyTeleKillOn] ?: [NSString stringWithFormat:@"%@/tele", self.serverBaseUrl];
-    self.teleKillConfig.urlOff = [ud stringForKey:kPrefKeyTeleKillOff] ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    self.fakeLagConfig.urlOn = valForKey(kPrefKeyFakeLagOn) ?: [NSString stringWithFormat:@"%@/freeze", self.serverBaseUrl];
+    self.fakeLagConfig.urlOff = valForKey(kPrefKeyFakeLagOff) ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    if (valForKey(kPrefKeyFakeLagActive) != nil) {
+        self.fakeLagConfig.isActive = [valForKey(kPrefKeyFakeLagActive) boolValue];
+    }
+    if (valForKey(kPrefKeyShowFakeLag) != nil) {
+        self.showFakeLagInHUD = [valForKey(kPrefKeyShowFakeLag) boolValue];
+    } else {
+        self.showFakeLagInHUD = YES;
+    }
     
-    self.ghostConfig.urlOn = [ud stringForKey:kPrefKeyGhostOn] ?: [NSString stringWithFormat:@"%@/ghost", self.serverBaseUrl];
-    self.ghostConfig.urlOff = [ud stringForKey:kPrefKeyGhostOff] ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    self.teleKillConfig.urlOn = valForKey(kPrefKeyTeleKillOn) ?: [NSString stringWithFormat:@"%@/tele", self.serverBaseUrl];
+    self.teleKillConfig.urlOff = valForKey(kPrefKeyTeleKillOff) ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    if (valForKey(kPrefKeyTeleKillActive) != nil) {
+        self.teleKillConfig.isActive = [valForKey(kPrefKeyTeleKillActive) boolValue];
+    }
+    if (valForKey(kPrefKeyShowTeleKill) != nil) {
+        self.showTeleKillInHUD = [valForKey(kPrefKeyShowTeleKill) boolValue];
+    } else {
+        self.showTeleKillInHUD = YES;
+    }
+    
+    self.ghostConfig.urlOn = valForKey(kPrefKeyGhostOn) ?: [NSString stringWithFormat:@"%@/ghost", self.serverBaseUrl];
+    self.ghostConfig.urlOff = valForKey(kPrefKeyGhostOff) ?: [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
+    if (valForKey(kPrefKeyGhostActive) != nil) {
+        self.ghostConfig.isActive = [valForKey(kPrefKeyGhostActive) boolValue];
+    }
+    if (valForKey(kPrefKeyShowGhost) != nil) {
+        self.showGhostInHUD = [valForKey(kPrefKeyShowGhost) boolValue];
+    } else {
+        self.showGhostInHUD = YES;
+    }
 }
 
 - (void)saveConfig:(RemoteFeatureConfig *)config {
-    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-    switch (config.type) {
-        case RemoteFeatureFakeLag:
-            [ud setObject:config.urlOn forKey:kPrefKeyFakeLagOn];
-            [ud setObject:config.urlOff forKey:kPrefKeyFakeLagOff];
-            break;
-        case RemoteFeatureTeleKill:
-            [ud setObject:config.urlOn forKey:kPrefKeyTeleKillOn];
-            [ud setObject:config.urlOff forKey:kPrefKeyTeleKillOff];
-            break;
-        case RemoteFeatureGhost:
-            [ud setObject:config.urlOn forKey:kPrefKeyGhostOn];
-            [ud setObject:config.urlOff forKey:kPrefKeyGhostOff];
-            break;
-    }
-    [ud synchronize];
+    [self saveAllConfigs];
 }
 
 - (void)saveAllConfigs {
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    dict[kPrefKeyServerBaseUrl] = self.serverBaseUrl ?: @"";
+    
+    dict[kPrefKeyFakeLagOn]      = self.fakeLagConfig.urlOn ?: @"";
+    dict[kPrefKeyFakeLagOff]     = self.fakeLagConfig.urlOff ?: @"";
+    dict[kPrefKeyFakeLagActive]  = @(self.fakeLagConfig.isActive);
+    dict[kPrefKeyShowFakeLag]    = @(self.showFakeLagInHUD);
+    
+    dict[kPrefKeyTeleKillOn]     = self.teleKillConfig.urlOn ?: @"";
+    dict[kPrefKeyTeleKillOff]    = self.teleKillConfig.urlOff ?: @"";
+    dict[kPrefKeyTeleKillActive] = @(self.teleKillConfig.isActive);
+    dict[kPrefKeyShowTeleKill]   = @(self.showTeleKillInHUD);
+    
+    dict[kPrefKeyGhostOn]        = self.ghostConfig.urlOn ?: @"";
+    dict[kPrefKeyGhostOff]       = self.ghostConfig.urlOff ?: @"";
+    dict[kPrefKeyGhostActive]    = @(self.ghostConfig.isActive);
+    dict[kPrefKeyShowGhost]      = @(self.showGhostInHUD);
+    
+    // Ghi vào file chia sẻ chung giữa FakeLag và Daemon FakeLagHUD
+    [dict writeToFile:kSharedPlistPath1 atomically:YES];
+    chmod([kSharedPlistPath1 UTF8String], 0666);
+    
+    [dict writeToFile:kSharedPlistPath2 atomically:YES];
+    chmod([kSharedPlistPath2 UTF8String], 0666);
+    
+    // Sync vào NSUserDefaults
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-    [ud setObject:self.serverBaseUrl forKey:kPrefKeyServerBaseUrl];
-    [self saveConfig:self.fakeLagConfig];
-    [self saveConfig:self.teleKillConfig];
-    [self saveConfig:self.ghostConfig];
+    for (NSString *key in dict) {
+        [ud setObject:dict[key] forKey:key];
+    }
     [ud synchronize];
+    
+    [self notifyChange];
 }
 
 - (void)applyBaseUrlToAllFeatures:(NSString *)baseUrl {
@@ -136,6 +220,9 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
 }
 
 - (void)setFeature:(RemoteFeatureType)type active:(BOOL)active completion:(void(^ _Nullable)(BOOL success, NSString * _Nullable responseText, NSInteger statusCode))completion {
+    // Luôn load cấu hình mới nhất trước khi gọi để đảm bảo URL chính xác
+    [self loadAllConfigs];
+    
     RemoteFeatureConfig *config = [self configForType:type];
     config.isActive = active;
     
@@ -143,6 +230,9 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
     if (!targetUrl || targetUrl.length == 0) {
         targetUrl = active ? [NSString stringWithFormat:@"%@/on", self.serverBaseUrl] : [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
     }
+    
+    // Lưu trạng thái ngay lập tức và phát thông báo đồng bộ 2 chiều
+    [self saveAllConfigs];
     
     // Rung phản hồi haptic
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:active ? UIImpactFeedbackStyleHeavy : UIImpactFeedbackStyleMedium];
@@ -153,7 +243,7 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
         config.lastStatusCode = statusCode;
         config.lastExecuted = [NSDate date];
         
-        [self notifyChange];
+        [self saveAllConfigs];
         
         if (completion) {
             completion(success, responseText, statusCode);
@@ -162,15 +252,18 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
 }
 
 - (void)toggleFeature:(RemoteFeatureType)type completion:(void(^ _Nullable)(BOOL success, NSString * _Nullable responseText, NSInteger statusCode))completion {
+    [self loadAllConfigs];
     RemoteFeatureConfig *config = [self configForType:type];
     BOOL nextState = !config.isActive;
     [self setFeature:type active:nextState completion:completion];
 }
 
 - (void)turnOffAllFeaturesWithCompletion:(void(^ _Nullable)(BOOL success))completion {
+    [self loadAllConfigs];
     self.fakeLagConfig.isActive = NO;
     self.teleKillConfig.isActive = NO;
     self.ghostConfig.isActive = NO;
+    [self saveAllConfigs];
     
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleRigid];
     [haptic impactOccurred];
@@ -181,7 +274,7 @@ static NSString * const kPrefKeyGhostOff      = @"Remote_Ghost_UrlOff";
         self.teleKillConfig.lastResponse = responseText;
         self.ghostConfig.lastResponse = responseText;
         
-        [self notifyChange];
+        [self saveAllConfigs];
         
         if (completion) {
             completion(success);

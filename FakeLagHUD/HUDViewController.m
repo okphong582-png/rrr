@@ -155,6 +155,8 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
         self.isMini = NO;
         self.miniContainer.hidden = YES;
         self.isLandscape = NO;
+        
+        [self refreshStates];
     }
     return self;
 }
@@ -364,9 +366,51 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 
 - (void)refreshStates {
     RemoteLinkManager *mgr = [RemoteLinkManager sharedManager];
+    [mgr loadAllConfigs];
+    
     [_fakeLagRow setOn:mgr.fakeLagConfig.isActive animated:NO];
     [_teleKillRow setOn:mgr.teleKillConfig.isActive animated:NO];
     [_ghostRow setOn:mgr.ghostConfig.isActive animated:NO];
+    
+    // Tùy biến vị trí động theo lựa chọn hiển thị của người dùng
+    CGFloat rowW = 199;
+    CGFloat rowH = 39;
+    CGFloat curY = 42;
+    
+    BOOL showFake = mgr.showFakeLagInHUD;
+    BOOL showTele = mgr.showTeleKillInHUD;
+    BOOL showGhost = mgr.showGhostInHUD;
+    
+    // Nếu cả 3 đều tắt thì mặc định hiện cả 3
+    if (!showFake && !showTele && !showGhost) {
+        showFake = YES; showTele = YES; showGhost = YES;
+    }
+    
+    _fakeLagRow.hidden = !showFake;
+    if (showFake) {
+        _fakeLagRow.frame = CGRectMake(8, curY, rowW, rowH);
+        curY += 44;
+    }
+    
+    _teleKillRow.hidden = !showTele;
+    if (showTele) {
+        _teleKillRow.frame = CGRectMake(8, curY, rowW, rowH);
+        curY += 44;
+    }
+    
+    _ghostRow.hidden = !showGhost;
+    if (showGhost) {
+        _ghostRow.frame = CGRectMake(8, curY, rowW, rowH);
+        curY += 44;
+    }
+    
+    _offAllBtn.frame = CGRectMake(8, curY + 2, rowW, 32);
+    CGFloat totalHeight = curY + 42;
+    
+    _expandedContainer.frame = CGRectMake(0, 0, 215, totalHeight);
+    if (!_isMini) {
+        self.bounds = _expandedContainer.bounds;
+    }
     
     int activeCount = (mgr.fakeLagConfig.isActive ? 1 : 0) + (mgr.teleKillConfig.isActive ? 1 : 0) + (mgr.ghostConfig.isActive ? 1 : 0);
     if (activeCount > 0) {
@@ -528,24 +572,24 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
                 return;
             }
             
-            // 5. Toggle FakeLag
-            if (CGRectContainsPoint(_fakeLagRow.frame, localPt)) {
+            // 5. Toggle FakeLag (nếu đang hiển thị)
+            if (!_fakeLagRow.hidden && CGRectContainsPoint(_fakeLagRow.frame, localPt)) {
                 BOOL next = !_fakeLagRow.toggleSwitch.isOn;
                 [_fakeLagRow setOn:next animated:YES];
                 if (self.toggleHandler) self.toggleHandler(RemoteFeatureFakeLag, next);
                 return;
             }
             
-            // 6. Toggle TeleKill
-            if (CGRectContainsPoint(_teleKillRow.frame, localPt)) {
+            // 6. Toggle TeleKill (nếu đang hiển thị)
+            if (!_teleKillRow.hidden && CGRectContainsPoint(_teleKillRow.frame, localPt)) {
                 BOOL next = !_teleKillRow.toggleSwitch.isOn;
                 [_teleKillRow setOn:next animated:YES];
                 if (self.toggleHandler) self.toggleHandler(RemoteFeatureTeleKill, next);
                 return;
             }
             
-            // 7. Toggle Ghost
-            if (CGRectContainsPoint(_ghostRow.frame, localPt)) {
+            // 7. Toggle Ghost (nếu đang hiển thị)
+            if (!_ghostRow.hidden && CGRectContainsPoint(_ghostRow.frame, localPt)) {
                 BOOL next = !_ghostRow.toggleSwitch.isOn;
                 [_ghostRow setOn:next animated:YES];
                 if (self.toggleHandler) self.toggleHandler(RemoteFeatureGhost, next);

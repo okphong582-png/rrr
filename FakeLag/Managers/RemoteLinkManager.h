@@ -18,6 +18,7 @@ typedef NS_ENUM(NSInteger, RemoteFeatureType) {
 @property (nonatomic, copy) NSString *urlOn;
 @property (nonatomic, copy) NSString *urlOff;
 @property (nonatomic, assign) BOOL isActive;
+@property (nonatomic, assign) BOOL isVisibleInHUD;
 @property (nonatomic, copy, nullable) NSString *lastResponse;
 @property (nonatomic, assign) NSInteger lastStatusCode;
 @property (nonatomic, copy, nullable) NSDate *lastExecuted;
@@ -30,6 +31,11 @@ typedef NS_ENUM(NSInteger, RemoteFeatureType) {
 @property (nonatomic, strong, readonly) RemoteFeatureConfig *fakeLagConfig;
 @property (nonatomic, strong, readonly) RemoteFeatureConfig *teleKillConfig;
 @property (nonatomic, strong, readonly) RemoteFeatureConfig *ghostConfig;
+
+@property (nonatomic, assign) BOOL showFakeLagInHUD;
+@property (nonatomic, assign) BOOL showTeleKillInHUD;
+@property (nonatomic, assign) BOOL showGhostInHUD;
+
 @property (nonatomic, copy) void (^ _Nullable logHandler)(NSString *log);
 
 + (instancetype)sharedManager;
