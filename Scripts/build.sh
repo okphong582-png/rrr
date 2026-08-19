@@ -20,7 +20,7 @@ rm -rf "$BUILD_DIR" "$OUTPUT_DIR"
 mkdir -p "$APP_DIR" "$TUNNEL_DIR" "$OUTPUT_DIR"
 
 CFLAGS="-arch $ARCH -isysroot $SDK_PATH -miphoneos-version-min=$MIN_IOS_VERSION -O3 -fobjc-arc -fmodules -Wno-deprecated-declarations -Wno-unused-variable"
-FRAMEWORKS="-framework UIKit -framework Foundation -framework CoreGraphics -framework NetworkExtension -framework QuartzCore -framework AudioToolbox"
+FRAMEWORKS="-framework UIKit -framework Foundation -framework CoreGraphics -framework NetworkExtension -framework QuartzCore -framework AudioToolbox -framework AVFoundation"
 
 echo "1. Biên dịch FakeLagTunnel (Network Extension)..."
 $CC $CFLAGS $FRAMEWORKS \

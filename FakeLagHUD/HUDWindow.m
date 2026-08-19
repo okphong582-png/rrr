@@ -1,6 +1,122 @@
 #import "HUDWindow.h"
 #import "HUDViewController.h"
 #import <objc/runtime.h>
+#import <dlfcn.h>
+
+typedef struct __IOHIDEvent *IOHIDEventRef;
+typedef struct __IOHIDService *IOHIDServiceRef;
+
+static void (*_p_BKSHIDEventRegisterEventCallback)(void (*)(void *, void *, IOHIDServiceRef, IOHIDEventRef)) = NULL;
+static HUDWindow *g_sharedHUDWindow = nil;
+
+static void _GlobalHUDEventCallback(void *target, void *refcon, IOHIDServiceRef service, IOHIDEventRef event) {
+    if (!g_sharedHUDWindow || g_sharedHUDWindow.isHidden || g_sharedHUDWindow.alpha < 0.01) {
+        return;
+    }
+    
+    static Class AXEventRepresentationCls = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dlopen("/System/Library/PrivateFrameworks/AccessibilityUtilities.framework/AccessibilityUtilities", RTLD_NOW);
+        AXEventRepresentationCls = objc_getClass("AXEventRepresentation");
+    });
+    
+    if (!AXEventRepresentationCls) return;
+    
+    id rep = [AXEventRepresentationCls performSelector:NSSelectorFromString(@"representationWithHIDEvent:hidStreamIdentifier:")
+                                            withObject:(__bridge id)event
+                                            withObject:@"UIApplicationEvents"];
+    if (!rep) return;
+    
+    SEL locSel = NSSelectorFromString(@"location");
+    if (![rep respondsToSelector:locSel]) return;
+    
+    CGPoint loc = CGPointZero;
+    NSMethodSignature *sig = [rep methodSignatureForSelector:locSel];
+    if (sig) {
+        NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+        [inv setSelector:locSel];
+        [inv setTarget:rep];
+        [inv invoke];
+        [inv getReturnValue:&loc];
+    }
+    
+    BOOL isDown = NO;
+    BOOL isMove = NO;
+    BOOL isLift = NO;
+    BOOL isCancel = NO;
+    
+    if ([rep respondsToSelector:NSSelectorFromString(@"isTouchDown")]) {
+        isDown = [[rep valueForKey:@"isTouchDown"] boolValue];
+    }
+    if ([rep respondsToSelector:NSSelectorFromString(@"isMove")]) {
+        isMove = [[rep valueForKey:@"isMove"] boolValue];
+    }
+    if ([rep respondsToSelector:NSSelectorFromString(@"isLift")]) {
+        isLift = [[rep valueForKey:@"isLift"] boolValue];
+    }
+    if ([rep respondsToSelector:NSSelectorFromString(@"isCancel")]) {
+        isCancel = [[rep valueForKey:@"isCancel"] boolValue];
+    }
+    if ([rep respondsToSelector:NSSelectorFromString(@"isInRangeLift")]) {
+        if ([[rep valueForKey:@"isInRangeLift"] boolValue]) isLift = YES;
+    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!g_sharedHUDWindow || g_sharedHUDWindow.isHidden) return;
+        
+        UIView *floatingView = g_sharedHUDWindow.floatingButtonView;
+        if (!floatingView || floatingView.isHidden) return;
+        
+        SEL downSel = NSSelectorFromString(@"handleGlobalTouchDownAtPoint:");
+        SEL moveSel = NSSelectorFromString(@"handleGlobalTouchMoveAtPoint:");
+        SEL upSel = NSSelectorFromString(@"handleGlobalTouchUpAtPoint:");
+        
+        if (isDown) {
+            if ([floatingView respondsToSelector:downSel]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+                NSMethodSignature *s = [floatingView methodSignatureForSelector:downSel];
+                if (s) {
+                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
+                    [i setSelector:downSel];
+                    [i setTarget:floatingView];
+                    [i setArgument:&loc atIndex:2];
+                    [i invoke];
+                }
+#pragma clang diagnostic pop
+            }
+        } else if (isMove) {
+            if ([floatingView respondsToSelector:moveSel]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+                NSMethodSignature *s = [floatingView methodSignatureForSelector:moveSel];
+                if (s) {
+                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
+                    [i setSelector:moveSel];
+                    [i setTarget:floatingView];
+                    [i setArgument:&loc atIndex:2];
+                    [i invoke];
+                }
+#pragma clang diagnostic pop
+            }
+        } else if (isLift || isCancel) {
+            if ([floatingView respondsToSelector:upSel]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+                NSMethodSignature *s = [floatingView methodSignatureForSelector:upSel];
+                if (s) {
+                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
+                    [i setSelector:upSel];
+                    [i setTarget:floatingView];
+                    [i setArgument:&loc atIndex:2];
+                    [i invoke];
+                }
+#pragma clang diagnostic pop
+            }
+        }
+    });
+}
 
 @implementation HUDWindow
 
@@ -26,6 +142,8 @@
 }
 
 - (void)commonInit {
+    g_sharedHUDWindow = self;
+    
     self.backgroundColor = [UIColor clearColor];
     self.windowLevel = 10000010.0;
     self.userInteractionEnabled = YES;
@@ -46,6 +164,21 @@
     }
     
     [self registerWithSpringBoardAccessibility];
+    [self setupGlobalBackBoardTouchHook];
+}
+
+- (void)setupGlobalBackBoardTouchHook {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        void *handle = dlopen("/System/Library/PrivateFrameworks/BackboardServices.framework/BackboardServices", RTLD_NOW);
+        if (handle) {
+            _p_BKSHIDEventRegisterEventCallback = dlsym(handle, "BKSHIDEventRegisterEventCallback");
+            if (_p_BKSHIDEventRegisterEventCallback) {
+                _p_BKSHIDEventRegisterEventCallback(_GlobalHUDEventCallback);
+                NSLog(@"[HUDWindow] TrollSpeed BackBoard Touch Hook Đã Kích Hoạt Thành Công!");
+            }
+        }
+    });
 }
 
 - (void)registerWithSpringBoardAccessibility {
