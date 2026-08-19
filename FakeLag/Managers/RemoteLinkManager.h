@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -35,6 +36,8 @@ typedef NS_ENUM(NSInteger, RemoteFeatureType) {
 @property (nonatomic, assign) BOOL showFakeLagInHUD;
 @property (nonatomic, assign) BOOL showTeleKillInHUD;
 @property (nonatomic, assign) BOOL showGhostInHUD;
+
+@property (nonatomic, assign) CGFloat hudScale; // 0.8x -> 1.3x
 
 @property (nonatomic, copy) void (^ _Nullable logHandler)(NSString *log);
 

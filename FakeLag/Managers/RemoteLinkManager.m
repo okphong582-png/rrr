@@ -24,6 +24,7 @@ static NSString * const kPrefKeyGhostActive   = @"Remote_Ghost_IsActive";
 static NSString * const kPrefKeyShowFakeLag   = @"Remote_Show_FakeLag";
 static NSString * const kPrefKeyShowTeleKill  = @"Remote_Show_TeleKill";
 static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
+static NSString * const kPrefKeyHUDScale      = @"Remote_HUD_Scale";
 
 @implementation RemoteFeatureConfig
 @end
@@ -57,6 +58,8 @@ static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
         config.requestCachePolicy = NSURLRequestReloadIgnoringLocalAndRemoteCacheData;
         _urlSession = [NSURLSession sessionWithConfiguration:config];
         
+        _hudScale = 1.0;
+        
         _fakeLagConfig = [[RemoteFeatureConfig alloc] init];
         _fakeLagConfig.type = RemoteFeatureFakeLag;
         _fakeLagConfig.name = @"FakeLag (Freeze)";
@@ -84,27 +87,18 @@ static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
     return self;
 }
 
-- (RemoteFeatureConfig *)configForType:(RemoteFeatureType)type {
-    switch (type) {
-        case RemoteFeatureFakeLag: return self.fakeLagConfig;
-        case RemoteFeatureTeleKill: return self.teleKillConfig;
-        case RemoteFeatureGhost: return self.ghostConfig;
+- (void)writeSharedDict:(NSDictionary *)dict {
+    NSData *data = [NSPropertyListSerialization dataWithPropertyList:dict
+                                                              format:NSPropertyListXMLFormat_v1_0
+                                                             options:0
+                                                               error:nil];
+    if (data) {
+        [data writeToFile:kSharedPlistPath1 atomically:YES];
+        chmod([kSharedPlistPath1 UTF8String], 0666);
+        
+        [data writeToFile:kSharedPlistPath2 atomically:YES];
+        chmod([kSharedPlistPath2 UTF8String], 0666);
     }
-}
-
-- (void)setShowFakeLagInHUD:(BOOL)showFakeLagInHUD {
-    _showFakeLagInHUD = showFakeLagInHUD;
-    self.fakeLagConfig.isVisibleInHUD = showFakeLagInHUD;
-}
-
-- (void)setShowTeleKillInHUD:(BOOL)showTeleKillInHUD {
-    _showTeleKillInHUD = showTeleKillInHUD;
-    self.teleKillConfig.isVisibleInHUD = showTeleKillInHUD;
-}
-
-- (void)setShowGhostInHUD:(BOOL)showGhostInHUD {
-    _showGhostInHUD = showGhostInHUD;
-    self.ghostConfig.isVisibleInHUD = showGhostInHUD;
 }
 
 - (NSDictionary *)readSharedDict {
@@ -158,6 +152,13 @@ static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
     } else {
         self.showGhostInHUD = YES;
     }
+    
+    if (valForKey(kPrefKeyHUDScale) != nil) {
+        self.hudScale = [valForKey(kPrefKeyHUDScale) doubleValue];
+        if (self.hudScale < 0.6 || self.hudScale > 2.0) self.hudScale = 1.0;
+    } else {
+        self.hudScale = 1.0;
+    }
 }
 
 - (void)saveConfig:(RemoteFeatureConfig *)config {
@@ -182,166 +183,144 @@ static NSString * const kPrefKeyShowGhost     = @"Remote_Show_Ghost";
     dict[kPrefKeyGhostOff]       = self.ghostConfig.urlOff ?: @"";
     dict[kPrefKeyGhostActive]    = @(self.ghostConfig.isActive);
     dict[kPrefKeyShowGhost]      = @(self.showGhostInHUD);
+    dict[kPrefKeyHUDScale]       = @(self.hudScale);
     
-    // Ghi vào file chia sẻ chung giữa FakeLag và Daemon FakeLagHUD
-    [dict writeToFile:kSharedPlistPath1 atomically:YES];
-    chmod([kSharedPlistPath1 UTF8String], 0666);
+    [self writeSharedDict:dict];
     
-    [dict writeToFile:kSharedPlistPath2 atomically:YES];
-    chmod([kSharedPlistPath2 UTF8String], 0666);
-    
-    // Sync vào NSUserDefaults
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
     for (NSString *key in dict) {
         [ud setObject:dict[key] forKey:key];
     }
     [ud synchronize];
     
-    [self notifyChange];
+    notify_post("com.fakelag.remotestatechanged");
+}
+
+- (RemoteFeatureConfig *)configForType:(RemoteFeatureType)type {
+    switch (type) {
+        case RemoteFeatureFakeLag: return self.fakeLagConfig;
+        case RemoteFeatureTeleKill: return self.teleKillConfig;
+        case RemoteFeatureGhost: return self.ghostConfig;
+    }
 }
 
 - (void)applyBaseUrlToAllFeatures:(NSString *)baseUrl {
-    NSString *cleanUrl = [baseUrl stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if ([cleanUrl hasSuffix:@"/"]) {
-        cleanUrl = [cleanUrl substringToIndex:cleanUrl.length - 1];
+    if (!baseUrl || baseUrl.length == 0) return;
+    
+    NSString *clean = [baseUrl stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([clean hasSuffix:@"/"]) {
+        clean = [clean substringToIndex:clean.length - 1];
     }
-    self.serverBaseUrl = cleanUrl;
     
-    self.fakeLagConfig.urlOn = [NSString stringWithFormat:@"%@/freeze", cleanUrl];
-    self.fakeLagConfig.urlOff = [NSString stringWithFormat:@"%@/off", cleanUrl];
+    self.serverBaseUrl = clean;
+    self.fakeLagConfig.urlOn  = [NSString stringWithFormat:@"%@/freeze", clean];
+    self.fakeLagConfig.urlOff = [NSString stringWithFormat:@"%@/off", clean];
     
-    self.teleKillConfig.urlOn = [NSString stringWithFormat:@"%@/tele", cleanUrl];
-    self.teleKillConfig.urlOff = [NSString stringWithFormat:@"%@/off", cleanUrl];
+    self.teleKillConfig.urlOn  = [NSString stringWithFormat:@"%@/tele", clean];
+    self.teleKillConfig.urlOff = [NSString stringWithFormat:@"%@/off", clean];
     
-    self.ghostConfig.urlOn = [NSString stringWithFormat:@"%@/ghost", cleanUrl];
-    self.ghostConfig.urlOff = [NSString stringWithFormat:@"%@/off", cleanUrl];
+    self.ghostConfig.urlOn  = [NSString stringWithFormat:@"%@/ghost", clean];
+    self.ghostConfig.urlOff = [NSString stringWithFormat:@"%@/off", clean];
     
     [self saveAllConfigs];
 }
 
 - (void)setFeature:(RemoteFeatureType)type active:(BOOL)active completion:(void(^ _Nullable)(BOOL success, NSString * _Nullable responseText, NSInteger statusCode))completion {
-    // Luôn load cấu hình mới nhất trước khi gọi để đảm bảo URL chính xác
-    [self loadAllConfigs];
-    
     RemoteFeatureConfig *config = [self configForType:type];
     config.isActive = active;
-    
-    NSString *targetUrl = active ? config.urlOn : config.urlOff;
-    if (!targetUrl || targetUrl.length == 0) {
-        targetUrl = active ? [NSString stringWithFormat:@"%@/on", self.serverBaseUrl] : [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
-    }
-    
-    // Lưu trạng thái ngay lập tức và phát thông báo đồng bộ 2 chiều
     [self saveAllConfigs];
     
-    // Rung phản hồi haptic
-    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:active ? UIImpactFeedbackStyleHeavy : UIImpactFeedbackStyleMedium];
-    [haptic impactOccurred];
+    NSString *targetUrl = active ? config.urlOn : config.urlOff;
     
     [self executeGetUrl:targetUrl completion:^(BOOL success, NSString * _Nullable responseText, NSInteger statusCode) {
         config.lastResponse = responseText;
         config.lastStatusCode = statusCode;
         config.lastExecuted = [NSDate date];
         
-        [self saveAllConfigs];
-        
-        if (completion) {
-            completion(success, responseText, statusCode);
+        if (success) {
+            AudioServicesPlaySystemSound(1519); // Peek feedback
+        } else {
+            AudioServicesPlaySystemSound(1521); // Error feedback
         }
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:RemoteLinkStateChangedNotification object:nil];
+            if (completion) completion(success, responseText, statusCode);
+        });
     }];
 }
 
 - (void)toggleFeature:(RemoteFeatureType)type completion:(void(^ _Nullable)(BOOL success, NSString * _Nullable responseText, NSInteger statusCode))completion {
-    [self loadAllConfigs];
     RemoteFeatureConfig *config = [self configForType:type];
-    BOOL nextState = !config.isActive;
-    [self setFeature:type active:nextState completion:completion];
+    [self setFeature:type active:!config.isActive completion:completion];
 }
 
 - (void)turnOffAllFeaturesWithCompletion:(void(^ _Nullable)(BOOL success))completion {
-    [self loadAllConfigs];
     self.fakeLagConfig.isActive = NO;
     self.teleKillConfig.isActive = NO;
     self.ghostConfig.isActive = NO;
     [self saveAllConfigs];
     
-    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleRigid];
-    [haptic impactOccurred];
+    NSString *offUrl = [NSString stringWithFormat:@"%@/off", self.serverBaseUrl ?: @"http://127.0.0.1:20000"];
     
-    NSString *offUrl = [NSString stringWithFormat:@"%@/off", self.serverBaseUrl];
     [self executeGetUrl:offUrl completion:^(BOOL success, NSString * _Nullable responseText, NSInteger statusCode) {
-        self.fakeLagConfig.lastResponse = responseText;
-        self.teleKillConfig.lastResponse = responseText;
-        self.ghostConfig.lastResponse = responseText;
-        
-        [self saveAllConfigs];
-        
-        if (completion) {
-            completion(success);
-        }
+        AudioServicesPlaySystemSound(1520);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:RemoteLinkStateChangedNotification object:nil];
+            if (completion) completion(success);
+        });
     }];
 }
 
-// === THỰC THI HTTP GET NHƯ TÍNH NĂNG "LẤY NỘI DUNG URL" CỦA IOS ===
 - (void)executeGetUrl:(NSString *)urlString completion:(void(^ _Nullable)(BOOL success, NSString * _Nullable responseText, NSInteger statusCode))completion {
     if (!urlString || urlString.length == 0) {
-        if (completion) completion(NO, @"URL rỗng", 0);
+        if (self.logHandler) self.logHandler(@"[ERR] URL trống, vui lòng cài đặt link!");
+        if (completion) completion(NO, @"URL Empty", 0);
         return;
     }
     
-    NSString *trimmed = [urlString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (![trimmed hasPrefix:@"http://"] && ![trimmed hasPrefix:@"https://"]) {
-        trimmed = [@"http://" stringByAppendingString:trimmed];
-    }
-    
-    NSURL *url = [NSURL URLWithString:trimmed];
+    NSURL *url = [NSURL URLWithString:urlString];
     if (!url) {
-        if (completion) completion(NO, @"URL không hợp lệ", 0);
+        if (self.logHandler) self.logHandler([NSString stringWithFormat:@"[ERR] URL không hợp lệ: %@", urlString]);
+        if (completion) completion(NO, @"Invalid URL", 0);
         return;
     }
     
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-    [request setValue:@"Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" forHTTPHeaderField:@"User-Agent"];
-    [request setValue:@"*/*" forHTTPHeaderField:@"Accept"];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
+    req.HTTPMethod = @"GET";
+    [req setValue:@"FakeLag-VIP/2.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"*/*" forHTTPHeaderField:@"Accept"];
     
-    __weak typeof(self) weakSelf = self;
-    NSURLSessionDataTask *task = [self.urlSession dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    if (self.logHandler) {
+        self.logHandler([NSString stringWithFormat:@"[GET] Đang gửi: %@", urlString]);
+    }
+    
+    NSURLSessionDataTask *task = [self.urlSession dataTaskWithRequest:req completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         NSInteger statusCode = 0;
         if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
-            statusCode = ((NSHTTPURLResponse *)response).statusCode;
+            statusCode = [(NSHTTPURLResponse *)response statusCode];
         }
         
-        NSString *respStr = @"";
+        if (error) {
+            NSString *errLog = [NSString stringWithFormat:@"[FAIL] Lỗi: %@ (%ld)", error.localizedDescription, (long)statusCode];
+            if (self.logHandler) self.logHandler(errLog);
+            if (completion) completion(NO, error.localizedDescription, statusCode);
+            return;
+        }
+        
+        NSString *respText = @"";
         if (data) {
-            respStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+            respText = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
         }
         
-        BOOL isSuccess = (!error && (statusCode >= 200 && statusCode < 400));
-        NSString *logMsg = [NSString stringWithFormat:@"[%@] GET %@ -> Status: %ld %@",
-                            isSuccess ? @"OK" : @"ERR",
-                            trimmed,
-                            (long)statusCode,
-                            error ? error.localizedDescription : (respStr.length > 50 ? [respStr substringToIndex:50] : respStr)];
+        NSString *succLog = [NSString stringWithFormat:@"[OK %ld] Phản hồi: %@", (long)statusCode, respText.length > 60 ? [respText substringToIndex:60] : respText];
+        if (self.logHandler) self.logHandler(succLog);
         
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (weakSelf.logHandler) {
-                weakSelf.logHandler(logMsg);
-            }
-            if (completion) {
-                completion(isSuccess, isSuccess ? respStr : (error.localizedDescription ?: @"Lỗi kết nối"), statusCode);
-            }
-        });
+        BOOL isHttpSuccess = (statusCode >= 200 && statusCode < 300);
+        if (completion) completion(isHttpSuccess, respText, statusCode);
     }];
     
     [task resume];
-}
-
-- (void)notifyChange {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        notify_post("com.fakelag.remotestatechanged");
-        [[NSNotificationCenter defaultCenter] postNotificationName:RemoteLinkStateChangedNotification object:self];
-    });
 }
 
 @end

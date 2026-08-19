@@ -15,6 +15,9 @@
     UISwitch *_showTeleKillSwitch;
     UISwitch *_showGhostSwitch;
     
+    // Chọn kích thước nút nổi
+    UISegmentedControl *_sizeSegmentControl;
+    
     UIButton *_overlayToggleButton;
     UIButton *_resetHUDButton;
     UILabel *_overlayStatusLabel;
@@ -60,15 +63,21 @@
     [self refreshState];
 }
 
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    _scrollView.frame = self.view.bounds;
+    _scrollView.contentSize = _contentView.bounds.size;
+}
+
 - (void)setupUI {
     _scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
     _scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     _scrollView.alwaysBounceVertical = YES;
-    _scrollView.showsVerticalScrollIndicator = NO;
+    _scrollView.showsVerticalScrollIndicator = YES;
     _scrollView.backgroundColor = [UIColor colorWithRed:0.03 green:0.04 blue:0.06 alpha:1.0];
     [self.view addSubview:_scrollView];
     
-    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 1280)];
+    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 1400)];
     [_scrollView addSubview:_contentView];
     
     CGFloat width = self.view.bounds.size.width - 32;
@@ -93,7 +102,7 @@
     [bannerView addSubview:titleLabel];
     
     UILabel *subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 46, width - 32, 24)];
-    subtitleLabel.text = @"Các Nút Nổi Tự Do Di Chuyển • OLED Cyber Dark";
+    subtitleLabel.text = @"Nút Gạt Rời Độc Lập • Xoay / Tắt / Kéo Thả Tự Do";
     subtitleLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
     subtitleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [bannerView addSubview:subtitleLabel];
@@ -101,48 +110,65 @@
     [_contentView addSubview:bannerView];
     currentY += 100.0;
     
-    // 2. Card: Nút Nổi Overlay Trong Suốt
-    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 186) title:@"1. CÁC NÚT NỔI OVERLAY TRONG SUỐT"];
+    // 2. Card: Nút Nổi Overlay Trong Suốt & Kích Thước
+    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 245) title:@"1. ĐIỀU KHIỂN & KÍCH THƯỚC NÚT NỔI"];
     
-    _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 40, width - 32, 22)];
+    _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 38, width - 32, 20)];
     _overlayStatusLabel.text = @"Trạng Thái: Đang tắt";
     _overlayStatusLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
-    _overlayStatusLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+    _overlayStatusLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [hudCard addSubview:_overlayStatusLabel];
     
     _overlayToggleButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _overlayToggleButton.frame = CGRectMake(16, 68, width - 32, 46);
+    _overlayToggleButton.frame = CGRectMake(16, 62, width - 32, 44);
     _overlayToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.48 alpha:1.0];
     _overlayToggleButton.layer.cornerRadius = 12.0;
-    [_overlayToggleButton setTitle:@"▶ BẬT CÁC NÚT NỔI TRONG SUỐT" forState:UIControlStateNormal];
+    [_overlayToggleButton setTitle:@"▶ BẬT CÁC NÚT GẠT TRÊN MÀN HÌNH" forState:UIControlStateNormal];
     [_overlayToggleButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
-    _overlayToggleButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightHeavy];
+    _overlayToggleButton.titleLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightHeavy];
     [_overlayToggleButton addTarget:self action:@selector(toggleOverlayTapped) forControlEvents:UIControlEventTouchUpInside];
     [hudCard addSubview:_overlayToggleButton];
     
+    // Segment Chọn Kích Thước Nút Gạt
+    UILabel *sizeLbl = [[UILabel alloc] initWithFrame:CGRectMake(16, 114, width - 32, 18)];
+    sizeLbl.text = @"📐 Kích Thước Nút Gạt:";
+    sizeLbl.textColor = [UIColor colorWithWhite:0.85 alpha:1.0];
+    sizeLbl.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold];
+    [hudCard addSubview:sizeLbl];
+    
+    _sizeSegmentControl = [[UISegmentedControl alloc] initWithItems:@[@"Nhỏ (0.85x)", @"Vừa (1.0x)", @"Lớn (1.18x)"]];
+    _sizeSegmentControl.frame = CGRectMake(16, 136, width - 32, 34);
+    _sizeSegmentControl.selectedSegmentIndex = 1;
+    _sizeSegmentControl.backgroundColor = [UIColor colorWithRed:0.08 green:0.11 blue:0.16 alpha:1.0];
+    _sizeSegmentControl.selectedSegmentTintColor = [UIColor colorWithRed:0.0 green:0.75 blue:0.95 alpha:1.0];
+    [_sizeSegmentControl setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: [UIFont systemFontOfSize:12 weight:UIFontWeightBold]} forState:UIControlStateSelected];
+    [_sizeSegmentControl setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:0.65 alpha:1.0], NSFontAttributeName: [UIFont systemFontOfSize:12]} forState:UIControlStateNormal];
+    [_sizeSegmentControl addTarget:self action:@selector(sizeSegmentChanged:) forControlEvents:UIControlEventValueChanged];
+    [hudCard addSubview:_sizeSegmentControl];
+    
     _resetHUDButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _resetHUDButton.frame = CGRectMake(16, 124, width - 32, 44);
+    _resetHUDButton.frame = CGRectMake(16, 180, width - 32, 40);
     _resetHUDButton.backgroundColor = [UIColor colorWithRed:0.10 green:0.13 blue:0.19 alpha:0.9];
     _resetHUDButton.layer.cornerRadius = 10.0;
     _resetHUDButton.layer.borderWidth = 1.0;
     _resetHUDButton.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.35].CGColor;
     [_resetHUDButton setTitle:@"📍 ĐẶT LẠI VỊ TRÍ 3 NÚT NỔI" forState:UIControlStateNormal];
     [_resetHUDButton setTitleColor:[UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0] forState:UIControlStateNormal];
-    _resetHUDButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+    _resetHUDButton.titleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold];
     [_resetHUDButton addTarget:self action:@selector(resetHUDPositionsTapped) forControlEvents:UIControlEventTouchUpInside];
     [hudCard addSubview:_resetHUDButton];
     
     [_contentView addSubview:hudCard];
-    currentY += 198.0;
+    currentY += 257.0;
     
-    // 3. Card: Tùy Chỉnh Ẩn/Hiện Từng Nút Trên Menu (Setting quan trọng ra ngoài màn hình)
+    // 3. Card: Tùy Chỉnh Ẩn/Hiện Từng Nút Trên Menu
     UIView *visCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 175) title:@"2. CHỌN TÍNH NĂNG HIỆN TRÊN MÀN HÌNH"];
     
     CGFloat rowW = width - 32;
     CGFloat vStartY = 42;
     
     _showFakeLagSwitch = [self addSwitchRowToCard:visCard frame:CGRectMake(16, vStartY, rowW, 36)
-                                             title:@"🧊 Hiện Nút FakeLag (Freeze)"
+                                             title:@"🧊 Hiện Nút Freeze (FakeLag)"
                                              color:[UIColor colorWithRed:0.0 green:0.80 blue:1.0 alpha:1.0]
                                             action:@selector(showFakeLagChanged:)];
     
@@ -164,7 +190,7 @@
     
     CGFloat cStartY = 42;
     _fakeLagSwitch = [self addSwitchRowToCard:ctrlCard frame:CGRectMake(16, cStartY, rowW, 36)
-                                        title:@"🧊 FakeLag (Freeze Địch)"
+                                        title:@"🧊 Freeze Địch (FakeLag)"
                                         color:[UIColor colorWithRed:0.0 green:0.80 blue:1.0 alpha:1.0]
                                        action:@selector(fakeLagSwitchChanged:)];
     
@@ -193,12 +219,11 @@
     [_contentView addSubview:ctrlCard];
     currentY += 234.0;
     
-    // 5. Card: Cài Đặt Link Nhanh (Đưa ra ngoài màn hình chính!)
+    // 5. Card: Cài Đặt Link Nhanh
     UIView *linkCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 320) title:@"4. CẤU HÌNH LINK URL (LƯU LOCAL)"];
     
     CGFloat lY = 40;
     
-    // Server Base URL
     _serverUrlField = [self addUrlInputFieldToCard:linkCard frame:CGRectMake(16, lY, rowW - 90, 36) placeholder:@"https://xxx.trycloudflare.com"];
     _serverUrlField.text = [RemoteLinkManager sharedManager].serverBaseUrl;
     
@@ -213,28 +238,24 @@
     [linkCard addSubview:autoGenBtn];
     lY += 44;
     
-    // FakeLag URL
     _fakeLagUrlField = [self addUrlInputFieldWithTestToCard:linkCard frame:CGRectMake(16, lY, rowW, 36)
                                                 placeholder:@"Link BẬT FakeLag (/freeze)"
                                                      action:@selector(testFakeLagTapped)];
     _fakeLagUrlField.text = [RemoteLinkManager sharedManager].fakeLagConfig.urlOn;
     lY += 44;
     
-    // TeleKill URL
     _teleKillUrlField = [self addUrlInputFieldWithTestToCard:linkCard frame:CGRectMake(16, lY, rowW, 36)
                                                  placeholder:@"Link BẬT TeleKill (/tele)"
                                                       action:@selector(testTeleKillTapped)];
     _teleKillUrlField.text = [RemoteLinkManager sharedManager].teleKillConfig.urlOn;
     lY += 44;
     
-    // Ghost URL
     _ghostUrlField = [self addUrlInputFieldWithTestToCard:linkCard frame:CGRectMake(16, lY, rowW, 36)
                                               placeholder:@"Link BẬT Ghost (/ghost)"
                                                    action:@selector(testGhostTapped)];
     _ghostUrlField.text = [RemoteLinkManager sharedManager].ghostConfig.urlOn;
     lY += 48;
     
-    // Nút Lưu Tất Cả Link
     UIButton *saveLinksBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     saveLinksBtn.frame = CGRectMake(16, lY, rowW, 40);
     saveLinksBtn.backgroundColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.45 alpha:1.0];
@@ -261,6 +282,11 @@
     [logCard addSubview:_logTextView];
     
     [_contentView addSubview:logCard];
+    currentY += 190.0;
+    
+    // Cập nhật contentSize để lướt mượt mà 100% không bị snap lại đầu
+    _contentView.frame = CGRectMake(0, 0, self.view.bounds.size.width, currentY + 40);
+    _scrollView.contentSize = CGSizeMake(self.view.bounds.size.width, currentY + 40);
 }
 
 - (UIView *)createCardWithFrame:(CGRect)frame title:(NSString *)title {
@@ -343,6 +369,14 @@
     return tf;
 }
 
+- (void)sizeSegmentChanged:(UISegmentedControl *)sender {
+    CGFloat scales[] = {0.85, 1.0, 1.18};
+    CGFloat chosen = scales[sender.selectedSegmentIndex];
+    [RemoteLinkManager sharedManager].hudScale = chosen;
+    [[RemoteLinkManager sharedManager] saveAllConfigs];
+    [self addLog:[NSString stringWithFormat:@"[OK] Đã đổi kích thước nút nổi: %.2fx", chosen]];
+}
+
 - (void)setupLogHandler {
     __weak typeof(self) weakSelf = self;
     [RemoteLinkManager sharedManager].logHandler = ^(NSString *log) {
@@ -394,6 +428,14 @@
     [_showFakeLagSwitch setOn:mgr.showFakeLagInHUD animated:YES];
     [_showTeleKillSwitch setOn:mgr.showTeleKillInHUD animated:YES];
     [_showGhostSwitch setOn:mgr.showGhostInHUD animated:YES];
+    
+    if (mgr.hudScale < 0.9) {
+        _sizeSegmentControl.selectedSegmentIndex = 0;
+    } else if (mgr.hudScale > 1.1) {
+        _sizeSegmentControl.selectedSegmentIndex = 2;
+    } else {
+        _sizeSegmentControl.selectedSegmentIndex = 1;
+    }
     
     _serverUrlField.text = mgr.serverBaseUrl;
     _fakeLagUrlField.text = mgr.fakeLagConfig.urlOn;
@@ -481,7 +523,7 @@
 }
 
 - (void)testFakeLagTapped {
-    [self testUrl:_fakeLagUrlField.text name:@"FakeLag (Freeze)"];
+    [self testUrl:_fakeLagUrlField.text name:@"Freeze (FakeLag)"];
 }
 
 - (void)testTeleKillTapped {
