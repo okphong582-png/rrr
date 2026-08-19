@@ -6,6 +6,7 @@
 static NSString * const kSavedHUDPosX = @"HUD_Panel_PosX";
 static NSString * const kSavedHUDPosY = @"HUD_Panel_PosY";
 static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
+static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 
 // ============================================================
 // HÀNG CÔNG TẮC GẠT IOS TOGGLE (SWITCH ROW)
@@ -27,7 +28,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     self = [super initWithFrame:frame];
     if (self) {
         self.featureType = type;
-        self.backgroundColor = [UIColor colorWithRed:0.11 green:0.14 blue:0.19 alpha:0.85];
+        self.backgroundColor = [UIColor colorWithRed:0.11 green:0.14 blue:0.20 alpha:0.85];
         self.layer.cornerRadius = 11.0;
         self.layer.borderWidth = 1.0;
         self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.10].CGColor;
@@ -105,6 +106,8 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 @property (nonatomic, strong) UIView *miniContainer;
 @property (nonatomic, strong) UILabel *miniBadgeLabel;
 @property (nonatomic, assign) BOOL isMini;
+@property (nonatomic, assign) BOOL isLandscape;
+
 @property (nonatomic, copy) void (^closeHandler)(void);
 @property (nonatomic, copy) void (^toggleHandler)(RemoteFeatureType type, BOOL isOn);
 @property (nonatomic, copy) void (^offAllHandler)(void);
@@ -112,6 +115,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 @property (nonatomic, strong) HUDToggleRowView *fakeLagRow;
 @property (nonatomic, strong) HUDToggleRowView *teleKillRow;
 @property (nonatomic, strong) HUDToggleRowView *ghostRow;
+@property (nonatomic, strong) UIButton *rotateBtn;
 @property (nonatomic, strong) UIButton *minBtn;
 @property (nonatomic, strong) UIButton *closeBtn;
 @property (nonatomic, strong) UIButton *offAllBtn;
@@ -122,6 +126,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 @property (nonatomic, assign) CGPoint globalStartCenter;
 
 - (void)setMini:(BOOL)mini animated:(BOOL)animated;
+- (void)setLandscape:(BOOL)landscape animated:(BOOL)animated;
 - (void)refreshStates;
 
 // Xử lý cảm ứng toàn cầu ngoài app (TrollSpeed BackBoard Engine)
@@ -149,24 +154,25 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
         
         self.isMini = NO;
         self.miniContainer.hidden = YES;
+        self.isLandscape = NO;
     }
     return self;
 }
 
 - (void)setupExpandedUI {
-    _expandedContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 205, 215)];
+    _expandedContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 215, 220)];
     _expandedContainer.backgroundColor = [UIColor colorWithRed:0.07 green:0.09 blue:0.13 alpha:0.95];
     _expandedContainer.layer.cornerRadius = 18.0;
     _expandedContainer.layer.borderWidth = 1.3;
-    _expandedContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.4].CGColor;
+    _expandedContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.45].CGColor;
     
-    _expandedContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.3].CGColor;
+    _expandedContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.35].CGColor;
     _expandedContainer.layer.shadowOffset = CGSizeMake(0, 6);
     _expandedContainer.layer.shadowRadius = 14.0;
     _expandedContainer.layer.shadowOpacity = 0.85;
     
     // 1. Header Bar
-    UIView *headerBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 205, 36)];
+    UIView *headerBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 215, 36)];
     headerBar.backgroundColor = [UIColor colorWithRed:0.11 green:0.14 blue:0.20 alpha:0.95];
     UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:headerBar.bounds
                                                    byRoundingCorners:(UIRectCornerTopLeft | UIRectCornerTopRight)
@@ -176,15 +182,23 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     maskLayer.path = maskPath.CGPath;
     headerBar.layer.mask = maskLayer;
     
-    UILabel *headerTitle = [[UILabel alloc] initWithFrame:CGRectMake(12, 0, 130, 36)];
+    UILabel *headerTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 0, 115, 36)];
     headerTitle.text = @"⚡ HOANGHA VIP";
-    headerTitle.font = [UIFont systemFontOfSize:12 weight:UIFontWeightHeavy];
+    headerTitle.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
     headerTitle.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
     [headerBar addSubview:headerTitle];
     
+    // Nút Xoay Hướng Ngang/Dọc (🔄)
+    _rotateBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    _rotateBtn.frame = CGRectMake(128, 4, 26, 28);
+    [_rotateBtn setTitle:@"🔄" forState:UIControlStateNormal];
+    _rotateBtn.titleLabel.font = [UIFont systemFontOfSize:11];
+    [_rotateBtn addTarget:self action:@selector(rotateBtnTapped) forControlEvents:UIControlEventTouchUpInside];
+    [headerBar addSubview:_rotateBtn];
+    
     // Nút Thu Gọn (➖)
     _minBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _minBtn.frame = CGRectMake(145, 4, 26, 28);
+    _minBtn.frame = CGRectMake(156, 4, 26, 28);
     [_minBtn setTitle:@"➖" forState:UIControlStateNormal];
     _minBtn.titleLabel.font = [UIFont systemFontOfSize:11];
     [_minBtn addTarget:self action:@selector(minBtnTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -192,7 +206,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     
     // Nút Đóng (✕)
     _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _closeBtn.frame = CGRectMake(173, 4, 26, 28);
+    _closeBtn.frame = CGRectMake(184, 4, 26, 28);
     [_closeBtn setTitle:@"✕" forState:UIControlStateNormal];
     [_closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.35 blue:0.35 alpha:1.0] forState:UIControlStateNormal];
     _closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
@@ -201,7 +215,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     
     [_expandedContainer addSubview:headerBar];
     
-    CGFloat rowW = 189;
+    CGFloat rowW = 199;
     CGFloat rowH = 39;
     CGFloat startY = 42;
     
@@ -244,7 +258,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     
     // Nút "🔴 TẮT TẤT CẢ (OFF ALL)"
     _offAllBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _offAllBtn.frame = CGRectMake(8, startY + 133, rowW, 30);
+    _offAllBtn.frame = CGRectMake(8, startY + 134, rowW, 32);
     _offAllBtn.backgroundColor = [UIColor colorWithRed:0.95 green:0.15 blue:0.25 alpha:0.25];
     _offAllBtn.layer.cornerRadius = 9.0;
     _offAllBtn.layer.borderWidth = 1.0;
@@ -259,9 +273,9 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 }
 
 - (void)setupMiniUI {
-    _miniContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 84, 36)];
+    _miniContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 88, 38)];
     _miniContainer.backgroundColor = [UIColor colorWithRed:0.07 green:0.09 blue:0.13 alpha:0.96];
-    _miniContainer.layer.cornerRadius = 18.0;
+    _miniContainer.layer.cornerRadius = 19.0;
     _miniContainer.layer.borderWidth = 1.5;
     _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.6].CGColor;
     
@@ -280,6 +294,10 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     [self addSubview:_miniContainer];
 }
 
+- (void)rotateBtnTapped {
+    [self setLandscape:!self.isLandscape animated:YES];
+}
+
 - (void)minBtnTapped {
     [self setMini:YES animated:YES];
 }
@@ -296,6 +314,28 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     [_ghostRow setOn:NO animated:YES];
     if (self.offAllHandler) {
         self.offAllHandler();
+    }
+}
+
+- (void)setLandscape:(BOOL)landscape animated:(BOOL)animated {
+    _isLandscape = landscape;
+    [[NSUserDefaults standardUserDefaults] setBool:landscape forKey:kSavedHUDOrientation];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    void (^rotationChanges)(void) = ^{
+        if (landscape) {
+            // Xoay ngang 90 độ cho góc nhìn game nằm ngang
+            self.transform = CGAffineTransformMakeRotation(M_PI_2);
+        } else {
+            // Trở về góc dọc đứng 0 độ
+            self.transform = CGAffineTransformIdentity;
+        }
+    };
+    
+    if (animated) {
+        [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:0.5 options:UIViewAnimationOptionCurveEaseInOut animations:rotationChanges completion:nil];
+    } else {
+        rotationChanges();
     }
 }
 
@@ -402,7 +442,8 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 
 // === XỬ LÝ CẢM ỨNG TOÀN CẦU NGOÀI APP (TROLLSPEED BACKBOARD ENGINE) ===
 - (BOOL)handleGlobalTouchDownAtPoint:(CGPoint)pt {
-    if (!CGRectContainsPoint(self.frame, pt)) {
+    CGRect frameInWindow = self.frame;
+    if (!CGRectContainsPoint(frameInWindow, pt)) {
         return NO;
     }
     _isTrackingGlobalTouch = YES;
@@ -465,25 +506,31 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
         } else {
             CGPoint localPt = [self convertPoint:pt fromView:self.window];
             
-            // 1. Kiểm tra bấm nút Thu Gọn (➖)
+            // 1. Nút Xoay Hướng Ngang / Dọc (🔄)
+            if (CGRectContainsPoint(_rotateBtn.frame, localPt)) {
+                [self rotateBtnTapped];
+                return;
+            }
+            
+            // 2. Nút Thu Gọn (➖)
             if (CGRectContainsPoint(_minBtn.frame, localPt)) {
                 [self minBtnTapped];
                 return;
             }
             
-            // 2. Kiểm tra bấm nút Đóng (✕)
+            // 3. Nút Đóng (✕)
             if (CGRectContainsPoint(_closeBtn.frame, localPt)) {
                 [self closeBtnTapped];
                 return;
             }
             
-            // 3. Kiểm tra bấm nút Tắt Tất Cả
+            // 4. Nút Tắt Tất Cả
             if (CGRectContainsPoint(_offAllBtn.frame, localPt)) {
                 [self offAllTapped];
                 return;
             }
             
-            // 4. Kiểm tra bấm Toggle FakeLag
+            // 5. Toggle FakeLag
             if (CGRectContainsPoint(_fakeLagRow.frame, localPt)) {
                 BOOL next = !_fakeLagRow.toggleSwitch.isOn;
                 [_fakeLagRow setOn:next animated:YES];
@@ -491,7 +538,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
                 return;
             }
             
-            // 5. Kiểm tra bấm Toggle TeleKill
+            // 6. Toggle TeleKill
             if (CGRectContainsPoint(_teleKillRow.frame, localPt)) {
                 BOOL next = !_teleKillRow.toggleSwitch.isOn;
                 [_teleKillRow setOn:next animated:YES];
@@ -499,7 +546,7 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
                 return;
             }
             
-            // 6. Kiểm tra bấm Toggle Ghost
+            // 7. Toggle Ghost
             if (CGRectContainsPoint(_ghostRow.frame, localPt)) {
                 BOOL next = !_ghostRow.toggleSwitch.isOn;
                 [_ghostRow setOn:next animated:YES];
@@ -547,10 +594,14 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     return _hudPanel.isMini;
 }
 
+- (BOOL)isLandscapeMode {
+    return _hudPanel.isLandscape;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    _hudPanel = [[HUDFloatingPanelView alloc] initWithFrame:CGRectMake(20, 150, 205, 215)];
+    _hudPanel = [[HUDFloatingPanelView alloc] initWithFrame:CGRectMake(20, 150, 215, 220)];
     
     __weak typeof(self) weakSelf = self;
     _hudPanel.toggleHandler = ^(RemoteFeatureType type, BOOL isOn) {
@@ -580,6 +631,10 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     [_hudPanel setMini:isMini animated:animated];
 }
 
+- (void)toggleOrientationModeAnimated:(BOOL)animated {
+    [_hudPanel setLandscape:!_hudPanel.isLandscape animated:animated];
+}
+
 - (void)setupDarwinNotifications {
     __weak typeof(self) weakSelf = self;
     notify_register_dispatch("com.fakelag.remotestatechanged", &_notifyToken, dispatch_get_main_queue(), ^(int token) {
@@ -599,17 +654,21 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
     double savedX = [[NSUserDefaults standardUserDefaults] doubleForKey:kSavedHUDPosX];
     double savedY = [[NSUserDefaults standardUserDefaults] doubleForKey:kSavedHUDPosY];
     BOOL isMini = [[NSUserDefaults standardUserDefaults] boolForKey:kSavedHUDMini];
+    BOOL isLandscape = [[NSUserDefaults standardUserDefaults] boolForKey:kSavedHUDOrientation];
     
     CGRect scr = [UIScreen mainScreen].bounds;
     if (savedX >= 30 && savedX <= scr.size.width - 30 &&
         savedY >= 50 && savedY <= scr.size.height - 50) {
         _hudPanel.center = CGPointMake(savedX, savedY);
     } else {
-        _hudPanel.center = CGPointMake(110, 210);
+        _hudPanel.center = CGPointMake(115, 220);
     }
     
     if (isMini) {
         [_hudPanel setMini:YES animated:NO];
+    }
+    if (isLandscape) {
+        [_hudPanel setLandscape:YES animated:NO];
     }
 }
 

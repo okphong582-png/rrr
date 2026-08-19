@@ -113,4 +113,10 @@
     }
 }
 
+- (void)toggleOrientation {
+    if (_inAppHUDVC) {
+        [_inAppHUDVC toggleOrientationModeAnimated:YES];
+    }
+}
+
 @end

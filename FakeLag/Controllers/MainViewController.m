@@ -9,6 +9,7 @@
     UISwitch *_ghostSwitch;
     
     UIButton *_overlayToggleButton;
+    UIButton *_rotateHUDButton;
     UILabel *_overlayStatusLabel;
     
     UITextField *_serverUrlField;
@@ -52,7 +53,7 @@
     _scrollView.showsVerticalScrollIndicator = NO;
     [self.view addSubview:_scrollView];
     
-    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 920)];
+    _contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 980)];
     [_scrollView addSubview:_contentView];
     
     CGFloat width = self.view.bounds.size.width - 32;
@@ -72,7 +73,7 @@
     [bannerView addSubview:titleLabel];
     
     UILabel *subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 44, width - 32, 24)];
-    subtitleLabel.text = @"Bảng Nổi 3 Toggle • GET Nội Dung URL Chuẩn iOS";
+    subtitleLabel.text = @"Bảng Nổi 3 Toggle • Hỗ Trợ Xoay Ngang / Dọc Toàn Cầu";
     subtitleLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
     subtitleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [bannerView addSubview:subtitleLabel];
@@ -81,26 +82,38 @@
     currentY += 96.0;
     
     // 2. Card: Nút Nổi Overlay (HUD Launcher)
-    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 140) title:@"1. BẢNG NÚT NỔI OVERLAY (3 TOGGLE)"];
+    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 186) title:@"1. BẢNG NÚT NỔI OVERLAY (3 TOGGLE)"];
     
-    _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 42, width - 32, 22)];
+    _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 40, width - 32, 22)];
     _overlayStatusLabel.text = @"Trạng Thái: Chưa kích hoạt";
     _overlayStatusLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
     _overlayStatusLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
     [hudCard addSubview:_overlayStatusLabel];
     
     _overlayToggleButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _overlayToggleButton.frame = CGRectMake(16, 74, width - 32, 48);
+    _overlayToggleButton.frame = CGRectMake(16, 70, width - 32, 46);
     _overlayToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.42 alpha:1.0];
     _overlayToggleButton.layer.cornerRadius = 12.0;
     [_overlayToggleButton setTitle:@"▶ BẬT BẢNG NÚT NỔI TRÊN MÀN HÌNH" forState:UIControlStateNormal];
     [_overlayToggleButton setTitleColor:[UIColor colorWithRed:0.05 green:0.15 blue:0.08 alpha:1.0] forState:UIControlStateNormal];
-    _overlayToggleButton.titleLabel.font = [UIFont systemFontOfSize:14.5 weight:UIFontWeightBold];
+    _overlayToggleButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     [_overlayToggleButton addTarget:self action:@selector(toggleOverlayTapped) forControlEvents:UIControlEventTouchUpInside];
     [hudCard addSubview:_overlayToggleButton];
     
+    _rotateHUDButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _rotateHUDButton.frame = CGRectMake(16, 126, width - 32, 44);
+    _rotateHUDButton.backgroundColor = [UIColor colorWithRed:0.15 green:0.19 blue:0.26 alpha:1.0];
+    _rotateHUDButton.layer.cornerRadius = 10.0;
+    _rotateHUDButton.layer.borderWidth = 1.0;
+    _rotateHUDButton.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.4].CGColor;
+    [_rotateHUDButton setTitle:@"🔄 XOAY HƯỚNG NÚT NỔI (NGANG / DỌC)" forState:UIControlStateNormal];
+    [_rotateHUDButton setTitleColor:[UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0] forState:UIControlStateNormal];
+    _rotateHUDButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+    [_rotateHUDButton addTarget:self action:@selector(rotateHUDTapped) forControlEvents:UIControlEventTouchUpInside];
+    [hudCard addSubview:_rotateHUDButton];
+    
     [_contentView addSubview:hudCard];
-    currentY += 152.0;
+    currentY += 198.0;
     
     // 3. Card: 3 Tính Năng Điều Khiển Trong App
     UIView *featureCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 225) title:@"2. BỘ ĐIỀU KHIỂN 3 TÍNH NĂNG"];
@@ -283,6 +296,10 @@
 - (void)toggleOverlayTapped {
     [[HUDLauncher sharedLauncher] toggleHUD];
     [self refreshState];
+}
+
+- (void)rotateHUDTapped {
+    [[HUDLauncher sharedLauncher] toggleOrientation];
 }
 
 - (void)fakeLagSwitchChanged:(UISwitch *)sender {
