@@ -5,6 +5,8 @@
 #import <spawn.h>
 #import <sys/sysctl.h>
 #import <mach-o/dyld.h>
+#import <unistd.h>
+#import <signal.h>
 
 extern char **environ;
 
@@ -61,8 +63,11 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
 }
 
 - (BOOL)startHUD {
+    // 1. Tắt triệt để mọi daemon cũ hoặc in-app window đang mở
     [self stopHUD];
+    usleep(150000); // 150ms
     
+    // 2. Thử spawn root daemon
     BOOL spawned = [self spawnDaemonProcess];
     if (spawned) {
         _isHUDRunning = YES;
@@ -70,6 +75,7 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
         return YES;
     }
     
+    // 3. Nếu spawn thất bại mới dùng in-app window
     dispatch_async(dispatch_get_main_queue(), ^{
         [self showInAppWindow];
     });
@@ -165,6 +171,11 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
 }
 
 - (void)stopHUD {
+    // 1. Gửi thông báo Darwin để daemon root tự dọn dẹp và exit
+    notify_post("com.fakelag.destroyhud");
+    notify_post("com.fakelag.stophud");
+    
+    // 2. Thử kill PID nếu có
     NSString *pidString = [NSString stringWithContentsOfFile:kPIDFilePath encoding:NSUTF8StringEncoding error:nil];
     if (pidString) {
         pid_t pid = (pid_t)[pidString intValue];
@@ -178,9 +189,11 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
         _daemonPid = 0;
     }
     
+    // 3. Đóng in-app window
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self->_inAppHUDWindow) {
             self->_inAppHUDWindow.hidden = YES;
+            self->_inAppHUDWindow.rootViewController = nil;
             self->_inAppHUDWindow = nil;
             self->_inAppHUDVC = nil;
         }
