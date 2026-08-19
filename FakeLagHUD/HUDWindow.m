@@ -98,7 +98,8 @@
     if (targetView && !targetView.isHidden && targetView.userInteractionEnabled) {
         CGPoint p = [targetView convertPoint:point fromView:self];
         if ([targetView pointInside:p withEvent:event]) {
-            return targetView;
+            UIView *hit = [targetView hitTest:p withEvent:event];
+            return hit ? hit : targetView;
         }
     }
     

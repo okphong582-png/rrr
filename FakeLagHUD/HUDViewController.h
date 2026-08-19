@@ -5,9 +5,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface HUDViewController : UIViewController
 
 @property (nonatomic, strong, readonly) UIView *floatingContainer;
-@property (nonatomic, assign, readonly) BOOL isLagActive;
+@property (nonatomic, assign, readonly) BOOL isMiniMode;
 
-- (void)updateLagState:(BOOL)isActive animated:(BOOL)animated;
+- (void)refreshAllToggleStates;
+- (void)setMiniMode:(BOOL)isMini animated:(BOOL)animated;
 
 @end
 
