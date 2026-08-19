@@ -13,13 +13,14 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.title = @"Cài Đặt Link & Menu";
-    self.view.backgroundColor = [UIColor colorWithRed:0.06 green:0.07 blue:0.10 alpha:1.0];
+    self.title = @"Cài Đặt Nâng Cao";
+    self.view.backgroundColor = [UIColor colorWithRed:0.03 green:0.04 blue:0.06 alpha:1.0];
     
     UIBarButtonItem *saveBtn = [[UIBarButtonItem alloc] initWithTitle:@"Lưu & Xong"
                                                                 style:UIBarButtonItemStyleDone
                                                                target:self
                                                                action:@selector(saveAndDismiss)];
+    saveBtn.tintColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
     self.navigationItem.rightBarButtonItem = saveBtn;
     
     [self setupTableView];
@@ -28,7 +29,7 @@
 - (void)setupTableView {
     _tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleInsetGrouped];
     _tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    _tableView.backgroundColor = [UIColor colorWithRed:0.06 green:0.07 blue:0.10 alpha:1.0];
+    _tableView.backgroundColor = [UIColor colorWithRed:0.03 green:0.04 blue:0.06 alpha:1.0];
     _tableView.delegate = self;
     _tableView.dataSource = self;
     [self.view addSubview:_tableView];
@@ -69,7 +70,7 @@
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"ConfigCell"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"ConfigCell"];
-        cell.backgroundColor = [UIColor colorWithRed:0.10 green:0.12 blue:0.17 alpha:1.0];
+        cell.backgroundColor = [UIColor colorWithRed:0.07 green:0.09 blue:0.13 alpha:1.0];
         cell.textLabel.textColor = [UIColor whiteColor];
         cell.textLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
         cell.detailTextLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
@@ -87,7 +88,7 @@
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         } else {
             cell.textLabel.text = @"⚡ Tự Động Áp Dụng Cho 3 Tính Năng";
-            cell.textLabel.textColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:1.0];
+            cell.textLabel.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
             cell.detailTextLabel.text = @"Tự điền link /freeze, /tele, /ghost và /off";
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
@@ -102,7 +103,7 @@
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         } else {
             cell.textLabel.text = @"▶ Test Thử Link FakeLag";
-            cell.textLabel.textColor = [UIColor colorWithRed:0.0 green:0.75 blue:1.0 alpha:1.0];
+            cell.textLabel.textColor = [UIColor colorWithRed:0.0 green:0.80 blue:1.0 alpha:1.0];
             cell.detailTextLabel.text = @"Gửi thử GET request kiểm tra phản hồi";
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
@@ -137,9 +138,8 @@
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
     } else if (indexPath.section == 4) {
-        // Section 4: Chọn tính năng hiển thị trên menu nổi
         UISwitch *visSwitch = [[UISwitch alloc] init];
-        visSwitch.onTintColor = [UIColor colorWithRed:0.0 green:0.80 blue:0.45 alpha:1.0];
+        visSwitch.onTintColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.48 alpha:1.0];
         
         if (indexPath.row == 0) {
             cell.textLabel.text = @"🧊 Hiện FakeLag (Freeze)";
@@ -257,8 +257,8 @@
         }
     } else if (indexPath.section == 5) {
         if (indexPath.row == 0) {
-            [[NSUserDefaults standardUserDefaults] setDouble:115 forKey:@"HUD_Panel_PosX"];
-            [[NSUserDefaults standardUserDefaults] setDouble:220 forKey:@"HUD_Panel_PosY"];
+            [[NSUserDefaults standardUserDefaults] setDouble:105 forKey:@"HUD_Panel_PosX"];
+            [[NSUserDefaults standardUserDefaults] setDouble:200 forKey:@"HUD_Panel_PosY"];
             [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"HUD_Panel_IsMini"];
             [[NSUserDefaults standardUserDefaults] synchronize];
             [self showToast:@"Đã đặt lại vị trí nút nổi về mặc định!"];

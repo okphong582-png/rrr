@@ -9,13 +9,12 @@ static NSString * const kSavedHUDMini = @"HUD_Panel_IsMini";
 static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 
 // ============================================================
-// HÀNG CÔNG TẮC GẠT IOS TOGGLE (SWITCH ROW)
+// HÀNG CÔNG TẮC GẠT TRONG SUỐT (TRANSPARENT SWITCH ROW)
 // ============================================================
 @interface HUDToggleRowView : UIView
 
 @property (nonatomic, assign) RemoteFeatureType featureType;
 @property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *subLabel;
 @property (nonatomic, strong) UISwitch *toggleSwitch;
 @property (nonatomic, strong) UIView *statusGlow;
 @property (nonatomic, copy) void (^switchChangedHandler)(BOOL isOn);
@@ -24,43 +23,35 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 
 @implementation HUDToggleRowView
 
-- (instancetype)initWithFrame:(CGRect)frame icon:(NSString *)icon name:(NSString *)name subtitle:(NSString *)sub color:(UIColor *)color featureType:(RemoteFeatureType)type {
+- (instancetype)initWithFrame:(CGRect)frame icon:(NSString *)icon name:(NSString *)name color:(UIColor *)color featureType:(RemoteFeatureType)type {
     self = [super initWithFrame:frame];
     if (self) {
         self.featureType = type;
-        self.backgroundColor = [UIColor colorWithRed:0.11 green:0.14 blue:0.20 alpha:0.85];
-        self.layer.cornerRadius = 11.0;
+        self.backgroundColor = [UIColor colorWithRed:0.10 green:0.14 blue:0.20 alpha:0.40];
+        self.layer.cornerRadius = 12.0;
         self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.10].CGColor;
+        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.12].CGColor;
         self.userInteractionEnabled = YES;
         
         // Status Glow Dot
-        _statusGlow = [[UIView alloc] initWithFrame:CGRectMake(10, 16, 8, 8)];
+        _statusGlow = [[UIView alloc] initWithFrame:CGRectMake(10, 14, 8, 8)];
         _statusGlow.layer.cornerRadius = 4.0;
-        _statusGlow.backgroundColor = [UIColor colorWithWhite:0.4 alpha:1.0];
+        _statusGlow.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.6];
         [self addSubview:_statusGlow];
         
         // Title Label
-        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(24, 4, frame.size.width - 85, 18)];
+        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(24, 0, frame.size.width - 80, frame.size.height)];
         _titleLabel.text = [NSString stringWithFormat:@"%@ %@", icon, name];
         _titleLabel.textColor = [UIColor whiteColor];
-        _titleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold];
+        _titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
         _titleLabel.userInteractionEnabled = NO;
         [self addSubview:_titleLabel];
-        
-        // Subtitle Label
-        _subLabel = [[UILabel alloc] initWithFrame:CGRectMake(24, 21, frame.size.width - 85, 14)];
-        _subLabel.text = sub;
-        _subLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
-        _subLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightMedium];
-        _subLabel.userInteractionEnabled = NO;
-        [self addSubview:_subLabel];
         
         // iOS Toggle Switch
         _toggleSwitch = [[UISwitch alloc] init];
         _toggleSwitch.center = CGPointMake(frame.size.width - 32, frame.size.height / 2.0);
         _toggleSwitch.onTintColor = color;
-        _toggleSwitch.transform = CGAffineTransformMakeScale(0.75, 0.75);
+        _toggleSwitch.transform = CGAffineTransformMakeScale(0.76, 0.76);
         [_toggleSwitch addTarget:self action:@selector(switchTapped:) forControlEvents:UIControlEventValueChanged];
         [self addSubview:_toggleSwitch];
     }
@@ -83,14 +74,16 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     if (isOn) {
         _statusGlow.backgroundColor = _toggleSwitch.onTintColor;
         _statusGlow.layer.shadowColor = _toggleSwitch.onTintColor.CGColor;
-        _statusGlow.layer.shadowRadius = 4.0;
-        _statusGlow.layer.shadowOpacity = 0.9;
-        self.layer.borderColor = [_toggleSwitch.onTintColor colorWithAlphaComponent:0.5].CGColor;
-        _titleLabel.textColor = [UIColor colorWithWhite:1.0 alpha:1.0];
+        _statusGlow.layer.shadowRadius = 5.0;
+        _statusGlow.layer.shadowOpacity = 1.0;
+        self.backgroundColor = [_toggleSwitch.onTintColor colorWithAlphaComponent:0.25];
+        self.layer.borderColor = [_toggleSwitch.onTintColor colorWithAlphaComponent:0.6].CGColor;
+        _titleLabel.textColor = [UIColor whiteColor];
     } else {
-        _statusGlow.backgroundColor = [UIColor colorWithWhite:0.4 alpha:1.0];
+        _statusGlow.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.6];
         _statusGlow.layer.shadowOpacity = 0.0;
-        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.10].CGColor;
+        self.backgroundColor = [UIColor colorWithRed:0.10 green:0.14 blue:0.20 alpha:0.40];
+        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.12].CGColor;
         _titleLabel.textColor = [UIColor colorWithWhite:0.9 alpha:1.0];
     }
 }
@@ -98,7 +91,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 @end
 
 // ============================================================
-// BẢNG ĐIỀU KHIỂN NỔI 3 TÍNH NĂNG (VIP FLOATING PANEL)
+// BẢNG ĐIỀU KHIỂN NỔI TRONG SUỐT (TRANSPARENT FLOATING PANEL)
 // ============================================================
 @interface HUDFloatingPanelView : UIView
 
@@ -162,37 +155,37 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 }
 
 - (void)setupExpandedUI {
-    _expandedContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 215, 220)];
-    _expandedContainer.backgroundColor = [UIColor colorWithRed:0.07 green:0.09 blue:0.13 alpha:0.95];
-    _expandedContainer.layer.cornerRadius = 18.0;
-    _expandedContainer.layer.borderWidth = 1.3;
-    _expandedContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.45].CGColor;
+    _expandedContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 195, 210)];
+    _expandedContainer.backgroundColor = [UIColor colorWithRed:0.04 green:0.06 blue:0.10 alpha:0.65];
+    _expandedContainer.layer.cornerRadius = 20.0;
+    _expandedContainer.layer.borderWidth = 1.2;
+    _expandedContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.45].CGColor;
     
-    _expandedContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.35].CGColor;
-    _expandedContainer.layer.shadowOffset = CGSizeMake(0, 6);
-    _expandedContainer.layer.shadowRadius = 14.0;
-    _expandedContainer.layer.shadowOpacity = 0.85;
+    _expandedContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.35].CGColor;
+    _expandedContainer.layer.shadowOffset = CGSizeMake(0, 4);
+    _expandedContainer.layer.shadowRadius = 12.0;
+    _expandedContainer.layer.shadowOpacity = 0.8;
     
-    // 1. Header Bar
-    UIView *headerBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 215, 36)];
-    headerBar.backgroundColor = [UIColor colorWithRed:0.11 green:0.14 blue:0.20 alpha:0.95];
+    // 1. Header Bar trong suốt
+    UIView *headerBar = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 195, 34)];
+    headerBar.backgroundColor = [UIColor colorWithRed:0.08 green:0.11 blue:0.16 alpha:0.55];
     UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:headerBar.bounds
                                                    byRoundingCorners:(UIRectCornerTopLeft | UIRectCornerTopRight)
-                                                         cornerRadii:CGSizeMake(18.0, 18.0)];
+                                                         cornerRadii:CGSizeMake(20.0, 20.0)];
     CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
     maskLayer.frame = headerBar.bounds;
     maskLayer.path = maskPath.CGPath;
     headerBar.layer.mask = maskLayer;
     
-    UILabel *headerTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 0, 115, 36)];
-    headerTitle.text = @"⚡ HOANGHA VIP";
-    headerTitle.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
+    UILabel *headerTitle = [[UILabel alloc] initWithFrame:CGRectMake(10, 0, 100, 34)];
+    headerTitle.text = @"⚡ VIP";
+    headerTitle.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightHeavy];
     headerTitle.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
     [headerBar addSubview:headerTitle];
     
-    // Nút Xoay Hướng Ngang/Dọc (🔄)
+    // Nút Xoay Ngang/Dọc (🔄)
     _rotateBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _rotateBtn.frame = CGRectMake(128, 4, 26, 28);
+    _rotateBtn.frame = CGRectMake(110, 3, 26, 28);
     [_rotateBtn setTitle:@"🔄" forState:UIControlStateNormal];
     _rotateBtn.titleLabel.font = [UIFont systemFontOfSize:11];
     [_rotateBtn addTarget:self action:@selector(rotateBtnTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -200,7 +193,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     
     // Nút Thu Gọn (➖)
     _minBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _minBtn.frame = CGRectMake(156, 4, 26, 28);
+    _minBtn.frame = CGRectMake(138, 3, 26, 28);
     [_minBtn setTitle:@"➖" forState:UIControlStateNormal];
     _minBtn.titleLabel.font = [UIFont systemFontOfSize:11];
     [_minBtn addTarget:self action:@selector(minBtnTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -208,25 +201,24 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     
     // Nút Đóng (✕)
     _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _closeBtn.frame = CGRectMake(184, 4, 26, 28);
+    _closeBtn.frame = CGRectMake(166, 3, 26, 28);
     [_closeBtn setTitle:@"✕" forState:UIControlStateNormal];
     [_closeBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.35 blue:0.35 alpha:1.0] forState:UIControlStateNormal];
-    _closeBtn.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+    _closeBtn.titleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightBold];
     [_closeBtn addTarget:self action:@selector(closeBtnTapped) forControlEvents:UIControlEventTouchUpInside];
     [headerBar addSubview:_closeBtn];
     
     [_expandedContainer addSubview:headerBar];
     
-    CGFloat rowW = 199;
-    CGFloat rowH = 39;
-    CGFloat startY = 42;
+    CGFloat rowW = 181;
+    CGFloat rowH = 36;
+    CGFloat startY = 38;
     
     // Row 1: FakeLag (Freeze 🧊)
-    _fakeLagRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(8, startY, rowW, rowH)
+    _fakeLagRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(7, startY, rowW, rowH)
                                                     icon:@"🧊"
                                                     name:@"FakeLag"
-                                                subtitle:@"Đóng băng đối phương"
-                                                   color:[UIColor colorWithRed:0.0 green:0.75 blue:1.0 alpha:1.0]
+                                                   color:[UIColor colorWithRed:0.0 green:0.80 blue:1.0 alpha:1.0]
                                              featureType:RemoteFeatureFakeLag];
     __weak typeof(self) weakSelf = self;
     _fakeLagRow.switchChangedHandler = ^(BOOL isOn) {
@@ -235,11 +227,10 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     [_expandedContainer addSubview:_fakeLagRow];
     
     // Row 2: TeleKill (⚡)
-    _teleKillRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(8, startY + 44, rowW, rowH)
+    _teleKillRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(7, startY + 41, rowW, rowH)
                                                      icon:@"⚡"
                                                      name:@"TeleKill"
-                                                 subtitle:@"Dịch chuyển tức thời"
-                                                    color:[UIColor colorWithRed:1.0 green:0.42 blue:0.1 alpha:1.0]
+                                                    color:[UIColor colorWithRed:1.0 green:0.45 blue:0.1 alpha:1.0]
                                               featureType:RemoteFeatureTeleKill];
     _teleKillRow.switchChangedHandler = ^(BOOL isOn) {
         if (weakSelf.toggleHandler) weakSelf.toggleHandler(RemoteFeatureTeleKill, isOn);
@@ -247,10 +238,9 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     [_expandedContainer addSubview:_teleKillRow];
     
     // Row 3: Ghost (👻)
-    _ghostRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(8, startY + 88, rowW, rowH)
+    _ghostRow = [[HUDToggleRowView alloc] initWithFrame:CGRectMake(7, startY + 82, rowW, rowH)
                                                   icon:@"👻"
-                                                  name:@"Ghost Lag"
-                                              subtitle:@"Tàng hình, lệch hitbox"
+                                                  name:@"Ghost"
                                                  color:[UIColor colorWithRed:0.75 green:0.45 blue:1.0 alpha:1.0]
                                            featureType:RemoteFeatureGhost];
     _ghostRow.switchChangedHandler = ^(BOOL isOn) {
@@ -260,14 +250,14 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     
     // Nút "🔴 TẮT TẤT CẢ (OFF ALL)"
     _offAllBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _offAllBtn.frame = CGRectMake(8, startY + 134, rowW, 32);
+    _offAllBtn.frame = CGRectMake(7, startY + 125, rowW, 28);
     _offAllBtn.backgroundColor = [UIColor colorWithRed:0.95 green:0.15 blue:0.25 alpha:0.25];
-    _offAllBtn.layer.cornerRadius = 9.0;
+    _offAllBtn.layer.cornerRadius = 8.0;
     _offAllBtn.layer.borderWidth = 1.0;
-    _offAllBtn.layer.borderColor = [UIColor colorWithRed:0.95 green:0.2 blue:0.3 alpha:0.6].CGColor;
-    [_offAllBtn setTitle:@"🔴 TẮT TOÀN BỘ (OFF ALL)" forState:UIControlStateNormal];
+    _offAllBtn.layer.borderColor = [UIColor colorWithRed:0.95 green:0.2 blue:0.3 alpha:0.5].CGColor;
+    [_offAllBtn setTitle:@"🔴 TẮT HẾT" forState:UIControlStateNormal];
     [_offAllBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.45 blue:0.45 alpha:1.0] forState:UIControlStateNormal];
-    _offAllBtn.titleLabel.font = [UIFont systemFontOfSize:11.5 weight:UIFontWeightHeavy];
+    _offAllBtn.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightHeavy];
     [_offAllBtn addTarget:self action:@selector(offAllTapped) forControlEvents:UIControlEventTouchUpInside];
     [_expandedContainer addSubview:_offAllBtn];
     
@@ -275,21 +265,21 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 }
 
 - (void)setupMiniUI {
-    _miniContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 88, 38)];
-    _miniContainer.backgroundColor = [UIColor colorWithRed:0.07 green:0.09 blue:0.13 alpha:0.96];
-    _miniContainer.layer.cornerRadius = 19.0;
-    _miniContainer.layer.borderWidth = 1.5;
-    _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.6].CGColor;
+    _miniContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 78, 34)];
+    _miniContainer.backgroundColor = [UIColor colorWithRed:0.04 green:0.06 blue:0.10 alpha:0.65];
+    _miniContainer.layer.cornerRadius = 17.0;
+    _miniContainer.layer.borderWidth = 1.3;
+    _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.6].CGColor;
     
-    _miniContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.45].CGColor;
-    _miniContainer.layer.shadowOffset = CGSizeMake(0, 4);
-    _miniContainer.layer.shadowRadius = 9.0;
-    _miniContainer.layer.shadowOpacity = 0.85;
+    _miniContainer.layer.shadowColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.45].CGColor;
+    _miniContainer.layer.shadowOffset = CGSizeMake(0, 3);
+    _miniContainer.layer.shadowRadius = 8.0;
+    _miniContainer.layer.shadowOpacity = 0.8;
     
     _miniBadgeLabel = [[UILabel alloc] initWithFrame:_miniContainer.bounds];
     _miniBadgeLabel.text = @"⚡ VIP";
     _miniBadgeLabel.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
-    _miniBadgeLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightHeavy];
+    _miniBadgeLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightHeavy];
     _miniBadgeLabel.textAlignment = NSTextAlignmentCenter;
     [_miniContainer addSubview:_miniBadgeLabel];
     
@@ -372,42 +362,40 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     [_teleKillRow setOn:mgr.teleKillConfig.isActive animated:NO];
     [_ghostRow setOn:mgr.ghostConfig.isActive animated:NO];
     
-    // Tùy biến vị trí động theo lựa chọn hiển thị của người dùng
-    CGFloat rowW = 199;
-    CGFloat rowH = 39;
-    CGFloat curY = 42;
+    CGFloat rowW = 181;
+    CGFloat rowH = 36;
+    CGFloat curY = 38;
     
     BOOL showFake = mgr.showFakeLagInHUD;
     BOOL showTele = mgr.showTeleKillInHUD;
     BOOL showGhost = mgr.showGhostInHUD;
     
-    // Nếu cả 3 đều tắt thì mặc định hiện cả 3
     if (!showFake && !showTele && !showGhost) {
         showFake = YES; showTele = YES; showGhost = YES;
     }
     
     _fakeLagRow.hidden = !showFake;
     if (showFake) {
-        _fakeLagRow.frame = CGRectMake(8, curY, rowW, rowH);
-        curY += 44;
+        _fakeLagRow.frame = CGRectMake(7, curY, rowW, rowH);
+        curY += 41;
     }
     
     _teleKillRow.hidden = !showTele;
     if (showTele) {
-        _teleKillRow.frame = CGRectMake(8, curY, rowW, rowH);
-        curY += 44;
+        _teleKillRow.frame = CGRectMake(7, curY, rowW, rowH);
+        curY += 41;
     }
     
     _ghostRow.hidden = !showGhost;
     if (showGhost) {
-        _ghostRow.frame = CGRectMake(8, curY, rowW, rowH);
-        curY += 44;
+        _ghostRow.frame = CGRectMake(7, curY, rowW, rowH);
+        curY += 41;
     }
     
-    _offAllBtn.frame = CGRectMake(8, curY + 2, rowW, 32);
-    CGFloat totalHeight = curY + 42;
+    _offAllBtn.frame = CGRectMake(7, curY + 2, rowW, 28);
+    CGFloat totalHeight = curY + 36;
     
-    _expandedContainer.frame = CGRectMake(0, 0, 215, totalHeight);
+    _expandedContainer.frame = CGRectMake(0, 0, 195, totalHeight);
     if (!_isMini) {
         self.bounds = _expandedContainer.bounds;
     }
@@ -416,11 +404,11 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     if (activeCount > 0) {
         _miniBadgeLabel.text = [NSString stringWithFormat:@"⚡ %d ON", activeCount];
         _miniBadgeLabel.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.55 alpha:1.0];
-        _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.55 alpha:0.9].CGColor;
+        _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.55 alpha:0.85].CGColor;
     } else {
         _miniBadgeLabel.text = @"⚡ VIP";
         _miniBadgeLabel.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0];
-        _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.92 blue:0.85 alpha:0.6].CGColor;
+        _miniContainer.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.6].CGColor;
     }
 }
 
@@ -541,14 +529,12 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
             [[NSUserDefaults standardUserDefaults] synchronize];
         }];
     } else {
-        // === SỰ KIỆN CHẠM (TAP) NGOÀI APP ===
         if (_isMini) {
-            // Chạm vào viên thuốc thu gọn -> Bung mở lại bảng
             [self setMini:NO animated:YES];
         } else {
             CGPoint localPt = [self convertPoint:pt fromView:self.window];
             
-            // 1. Nút Xoay Hướng Ngang / Dọc (🔄)
+            // 1. Nút Xoay Ngang/Dọc (🔄)
             if (CGRectContainsPoint(_rotateBtn.frame, localPt)) {
                 [self rotateBtnTapped];
                 return;
@@ -572,7 +558,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
                 return;
             }
             
-            // 5. Toggle FakeLag (nếu đang hiển thị)
+            // 5. Toggle FakeLag
             if (!_fakeLagRow.hidden && CGRectContainsPoint(_fakeLagRow.frame, localPt)) {
                 BOOL next = !_fakeLagRow.toggleSwitch.isOn;
                 [_fakeLagRow setOn:next animated:YES];
@@ -580,7 +566,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
                 return;
             }
             
-            // 6. Toggle TeleKill (nếu đang hiển thị)
+            // 6. Toggle TeleKill
             if (!_teleKillRow.hidden && CGRectContainsPoint(_teleKillRow.frame, localPt)) {
                 BOOL next = !_teleKillRow.toggleSwitch.isOn;
                 [_teleKillRow setOn:next animated:YES];
@@ -588,7 +574,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
                 return;
             }
             
-            // 7. Toggle Ghost (nếu đang hiển thị)
+            // 7. Toggle Ghost
             if (!_ghostRow.hidden && CGRectContainsPoint(_ghostRow.frame, localPt)) {
                 BOOL next = !_ghostRow.toggleSwitch.isOn;
                 [_ghostRow setOn:next animated:YES];
@@ -643,7 +629,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    _hudPanel = [[HUDFloatingPanelView alloc] initWithFrame:CGRectMake(20, 150, 215, 220)];
+    _hudPanel = [[HUDFloatingPanelView alloc] initWithFrame:CGRectMake(20, 150, 195, 210)];
     
     __weak typeof(self) weakSelf = self;
     _hudPanel.toggleHandler = ^(RemoteFeatureType type, BOOL isOn) {
@@ -703,7 +689,7 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
         savedY >= 50 && savedY <= scr.size.height - 50) {
         _hudPanel.center = CGPointMake(savedX, savedY);
     } else {
-        _hudPanel.center = CGPointMake(115, 220);
+        _hudPanel.center = CGPointMake(105, 200);
     }
     
     if (isMini) {
