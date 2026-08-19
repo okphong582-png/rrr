@@ -2,15 +2,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class DraggableTogglePillView;
+
 @interface HUDViewController : UIViewController
 
+@property (nonatomic, strong, readonly) NSArray<DraggableTogglePillView *> *allPillViews;
 @property (nonatomic, strong, readonly) UIView *floatingContainer;
-@property (nonatomic, assign, readonly) BOOL isMiniMode;
-@property (nonatomic, assign, readonly) BOOL isLandscapeMode;
 
 - (void)refreshAllToggleStates;
-- (void)setMiniMode:(BOOL)isMini animated:(BOOL)animated;
-- (void)toggleOrientationModeAnimated:(BOOL)animated;
+- (BOOL)handleGlobalTouchDownAtPoint:(CGPoint)pt;
+- (void)handleGlobalTouchMoveAtPoint:(CGPoint)pt;
+- (void)handleGlobalTouchUpAtPoint:(CGPoint)pt;
 
 @end
 

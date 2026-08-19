@@ -65,54 +65,14 @@ static void _GlobalHUDEventCallback(void *target, void *refcon, IOHIDServiceRef 
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!g_sharedHUDWindow || g_sharedHUDWindow.isHidden) return;
         
-        UIView *floatingView = g_sharedHUDWindow.floatingButtonView;
-        if (!floatingView || floatingView.isHidden) return;
-        
-        SEL downSel = NSSelectorFromString(@"handleGlobalTouchDownAtPoint:");
-        SEL moveSel = NSSelectorFromString(@"handleGlobalTouchMoveAtPoint:");
-        SEL upSel = NSSelectorFromString(@"handleGlobalTouchUpAtPoint:");
-        
-        if (isDown) {
-            if ([floatingView respondsToSelector:downSel]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-                NSMethodSignature *s = [floatingView methodSignatureForSelector:downSel];
-                if (s) {
-                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
-                    [i setSelector:downSel];
-                    [i setTarget:floatingView];
-                    [i setArgument:&loc atIndex:2];
-                    [i invoke];
-                }
-#pragma clang diagnostic pop
-            }
-        } else if (isMove) {
-            if ([floatingView respondsToSelector:moveSel]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-                NSMethodSignature *s = [floatingView methodSignatureForSelector:moveSel];
-                if (s) {
-                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
-                    [i setSelector:moveSel];
-                    [i setTarget:floatingView];
-                    [i setArgument:&loc atIndex:2];
-                    [i invoke];
-                }
-#pragma clang diagnostic pop
-            }
-        } else if (isLift || isCancel) {
-            if ([floatingView respondsToSelector:upSel]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-                NSMethodSignature *s = [floatingView methodSignatureForSelector:upSel];
-                if (s) {
-                    NSInvocation *i = [NSInvocation invocationWithMethodSignature:s];
-                    [i setSelector:upSel];
-                    [i setTarget:floatingView];
-                    [i setArgument:&loc atIndex:2];
-                    [i invoke];
-                }
-#pragma clang diagnostic pop
+        if ([g_sharedHUDWindow.rootViewController isKindOfClass:[HUDViewController class]]) {
+            HUDViewController *hudVC = (HUDViewController *)g_sharedHUDWindow.rootViewController;
+            if (isDown) {
+                [hudVC handleGlobalTouchDownAtPoint:loc];
+            } else if (isMove) {
+                [hudVC handleGlobalTouchMoveAtPoint:loc];
+            } else if (isLift || isCancel) {
+                [hudVC handleGlobalTouchUpAtPoint:loc];
             }
         }
     });
@@ -222,17 +182,16 @@ static void _GlobalHUDEventCallback(void *target, void *refcon, IOHIDServiceRef 
         return nil;
     }
     
-    UIView *targetView = self.floatingButtonView;
-    if (!targetView && [self.rootViewController isKindOfClass:[HUDViewController class]]) {
-        targetView = [(HUDViewController *)self.rootViewController floatingContainer];
-        self.floatingButtonView = targetView;
-    }
-    
-    if (targetView && !targetView.isHidden && targetView.userInteractionEnabled) {
-        CGPoint p = [targetView convertPoint:point fromView:self];
-        if ([targetView pointInside:p withEvent:event]) {
-            UIView *hit = [targetView hitTest:p withEvent:event];
-            return hit ? hit : targetView;
+    if ([self.rootViewController isKindOfClass:[HUDViewController class]]) {
+        HUDViewController *hudVC = (HUDViewController *)self.rootViewController;
+        for (UIView *pill in hudVC.allPillViews) {
+            if (!pill.isHidden && pill.userInteractionEnabled && pill.alpha > 0.01) {
+                CGPoint p = [pill convertPoint:point fromView:self];
+                if ([pill pointInside:p withEvent:event]) {
+                    UIView *hit = [pill hitTest:p withEvent:event];
+                    return hit ? hit : pill;
+                }
+            }
         }
     }
     
@@ -240,15 +199,16 @@ static void _GlobalHUDEventCallback(void *target, void *refcon, IOHIDServiceRef 
 }
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    UIView *targetView = self.floatingButtonView;
-    if (!targetView && [self.rootViewController isKindOfClass:[HUDViewController class]]) {
-        targetView = [(HUDViewController *)self.rootViewController floatingContainer];
-        self.floatingButtonView = targetView;
-    }
-    
-    if (targetView && !targetView.isHidden && targetView.userInteractionEnabled) {
-        CGPoint p = [targetView convertPoint:point fromView:self];
-        return [targetView pointInside:p withEvent:event];
+    if ([self.rootViewController isKindOfClass:[HUDViewController class]]) {
+        HUDViewController *hudVC = (HUDViewController *)self.rootViewController;
+        for (UIView *pill in hudVC.allPillViews) {
+            if (!pill.isHidden && pill.userInteractionEnabled && pill.alpha > 0.01) {
+                CGPoint p = [pill convertPoint:point fromView:self];
+                if ([pill pointInside:p withEvent:event]) {
+                    return YES;
+                }
+            }
+        }
     }
     return NO;
 }
