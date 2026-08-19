@@ -23,9 +23,16 @@ static void _GlobalHUDEventCallback(void *target, void *refcon, IOHIDServiceRef 
     
     if (!AXEventRepresentationCls) return;
     
-    id rep = [AXEventRepresentationCls performSelector:NSSelectorFromString(@"representationWithHIDEvent:hidStreamIdentifier:")
-                                            withObject:(__bridge id)event
-                                            withObject:@"UIApplicationEvents"];
+    id rep = nil;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+    SEL repSel = NSSelectorFromString(@"representationWithHIDEvent:hidStreamIdentifier:");
+    if ([AXEventRepresentationCls respondsToSelector:repSel]) {
+        rep = [AXEventRepresentationCls performSelector:repSel
+                                             withObject:(__bridge id)event
+                                             withObject:@"UIApplicationEvents"];
+    }
+#pragma clang diagnostic pop
     if (!rep) return;
     
     SEL locSel = NSSelectorFromString(@"location");

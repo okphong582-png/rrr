@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)startHUD;
 - (void)stopHUD;
 - (void)toggleHUD;
-- (void)toggleOrientation;
+- (void)resetHUDPositions;
 
 @end
 

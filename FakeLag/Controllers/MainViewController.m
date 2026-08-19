@@ -16,7 +16,7 @@
     UISwitch *_showGhostSwitch;
     
     UIButton *_overlayToggleButton;
-    UIButton *_rotateHUDButton;
+    UIButton *_resetHUDButton;
     UILabel *_overlayStatusLabel;
     
     // Cài đặt link nhanh
@@ -93,7 +93,7 @@
     [bannerView addSubview:titleLabel];
     
     UILabel *subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 46, width - 32, 24)];
-    subtitleLabel.text = @"Nút Nổi Trong Suốt • OLED Cyber Dark Edition";
+    subtitleLabel.text = @"Các Nút Nổi Tự Do Di Chuyển • OLED Cyber Dark";
     subtitleLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
     subtitleLabel.font = [UIFont systemFontOfSize:12.5 weight:UIFontWeightMedium];
     [bannerView addSubview:subtitleLabel];
@@ -102,7 +102,7 @@
     currentY += 100.0;
     
     // 2. Card: Nút Nổi Overlay Trong Suốt
-    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 186) title:@"1. NÚT NỔI OVERLAY TRONG SUỐT"];
+    UIView *hudCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 186) title:@"1. CÁC NÚT NỔI OVERLAY TRONG SUỐT"];
     
     _overlayStatusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 40, width - 32, 22)];
     _overlayStatusLabel.text = @"Trạng Thái: Đang tắt";
@@ -114,45 +114,45 @@
     _overlayToggleButton.frame = CGRectMake(16, 68, width - 32, 46);
     _overlayToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.48 alpha:1.0];
     _overlayToggleButton.layer.cornerRadius = 12.0;
-    [_overlayToggleButton setTitle:@"▶ BẬT MENU NỔI TRONG SUỐT" forState:UIControlStateNormal];
+    [_overlayToggleButton setTitle:@"▶ BẬT CÁC NÚT NỔI TRONG SUỐT" forState:UIControlStateNormal];
     [_overlayToggleButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
     _overlayToggleButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightHeavy];
     [_overlayToggleButton addTarget:self action:@selector(toggleOverlayTapped) forControlEvents:UIControlEventTouchUpInside];
     [hudCard addSubview:_overlayToggleButton];
     
-    _rotateHUDButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _rotateHUDButton.frame = CGRectMake(16, 124, width - 32, 44);
-    _rotateHUDButton.backgroundColor = [UIColor colorWithRed:0.10 green:0.13 blue:0.19 alpha:0.9];
-    _rotateHUDButton.layer.cornerRadius = 10.0;
-    _rotateHUDButton.layer.borderWidth = 1.0;
-    _rotateHUDButton.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.35].CGColor;
-    [_rotateHUDButton setTitle:@"🔄 XOAY HƯỚNG MENU (NGANG / DỌC)" forState:UIControlStateNormal];
-    [_rotateHUDButton setTitleColor:[UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0] forState:UIControlStateNormal];
-    _rotateHUDButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
-    [_rotateHUDButton addTarget:self action:@selector(rotateHUDTapped) forControlEvents:UIControlEventTouchUpInside];
-    [hudCard addSubview:_rotateHUDButton];
+    _resetHUDButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _resetHUDButton.frame = CGRectMake(16, 124, width - 32, 44);
+    _resetHUDButton.backgroundColor = [UIColor colorWithRed:0.10 green:0.13 blue:0.19 alpha:0.9];
+    _resetHUDButton.layer.cornerRadius = 10.0;
+    _resetHUDButton.layer.borderWidth = 1.0;
+    _resetHUDButton.layer.borderColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:0.35].CGColor;
+    [_resetHUDButton setTitle:@"📍 ĐẶT LẠI VỊ TRÍ 3 NÚT NỔI" forState:UIControlStateNormal];
+    [_resetHUDButton setTitleColor:[UIColor colorWithRed:0.0 green:0.95 blue:0.85 alpha:1.0] forState:UIControlStateNormal];
+    _resetHUDButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightBold];
+    [_resetHUDButton addTarget:self action:@selector(resetHUDPositionsTapped) forControlEvents:UIControlEventTouchUpInside];
+    [hudCard addSubview:_resetHUDButton];
     
     [_contentView addSubview:hudCard];
     currentY += 198.0;
     
     // 3. Card: Tùy Chỉnh Ẩn/Hiện Từng Nút Trên Menu (Setting quan trọng ra ngoài màn hình)
-    UIView *visCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 175) title:@"2. CHỌN TÍNH NĂNG HIỆN TRÊN MENU NỔI"];
+    UIView *visCard = [self createCardWithFrame:CGRectMake(16, currentY, width, 175) title:@"2. CHỌN TÍNH NĂNG HIỆN TRÊN MÀN HÌNH"];
     
     CGFloat rowW = width - 32;
     CGFloat vStartY = 42;
     
     _showFakeLagSwitch = [self addSwitchRowToCard:visCard frame:CGRectMake(16, vStartY, rowW, 36)
-                                             title:@"🧊 Hiện FakeLag (Freeze)"
+                                             title:@"🧊 Hiện Nút FakeLag (Freeze)"
                                              color:[UIColor colorWithRed:0.0 green:0.80 blue:1.0 alpha:1.0]
                                             action:@selector(showFakeLagChanged:)];
     
     _showTeleKillSwitch = [self addSwitchRowToCard:visCard frame:CGRectMake(16, vStartY + 42, rowW, 36)
-                                              title:@"⚡ Hiện TeleKill"
+                                              title:@"⚡ Hiện Nút TeleKill"
                                               color:[UIColor colorWithRed:1.0 green:0.45 blue:0.1 alpha:1.0]
                                              action:@selector(showTeleKillChanged:)];
     
     _showGhostSwitch = [self addSwitchRowToCard:visCard frame:CGRectMake(16, vStartY + 84, rowW, 36)
-                                           title:@"👻 Hiện Ghost Lag"
+                                           title:@"👻 Hiện Nút Ghost Lag"
                                            color:[UIColor colorWithRed:0.75 green:0.45 blue:1.0 alpha:1.0]
                                           action:@selector(showGhostChanged:)];
     
@@ -404,13 +404,13 @@
     if (hudRunning) {
         _overlayStatusLabel.text = @"Trạng Thái: Đang hiển thị trên màn hình";
         _overlayStatusLabel.textColor = [UIColor colorWithRed:0.0 green:0.95 blue:0.55 alpha:1.0];
-        [_overlayToggleButton setTitle:@"⏹ TẮT MENU NỔI TRONG SUỐT" forState:UIControlStateNormal];
+        [_overlayToggleButton setTitle:@"⏹ TẮT CÁC NÚT NỔI TRONG SUỐT" forState:UIControlStateNormal];
         _overlayToggleButton.backgroundColor = [UIColor colorWithRed:0.90 green:0.20 blue:0.25 alpha:1.0];
         [_overlayToggleButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     } else {
         _overlayStatusLabel.text = @"Trạng Thái: Đang tắt";
         _overlayStatusLabel.textColor = [UIColor colorWithWhite:0.65 alpha:1.0];
-        [_overlayToggleButton setTitle:@"▶ BẬT MENU NỔI TRONG SUỐT" forState:UIControlStateNormal];
+        [_overlayToggleButton setTitle:@"▶ BẬT CÁC NÚT NỔI TRONG SUỐT" forState:UIControlStateNormal];
         _overlayToggleButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.85 blue:0.48 alpha:1.0];
         [_overlayToggleButton setTitleColor:[UIColor colorWithRed:0.02 green:0.12 blue:0.06 alpha:1.0] forState:UIControlStateNormal];
     }
@@ -421,8 +421,9 @@
     [self refreshState];
 }
 
-- (void)rotateHUDTapped {
-    [[HUDLauncher sharedLauncher] toggleOrientation];
+- (void)resetHUDPositionsTapped {
+    [[HUDLauncher sharedLauncher] resetHUDPositions];
+    [self addLog:@"[OK] Đã đặt lại vị trí 3 nút nổi về mặc định!"];
 }
 
 - (void)showFakeLagChanged:(UISwitch *)sender {

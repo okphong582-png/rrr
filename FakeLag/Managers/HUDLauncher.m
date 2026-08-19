@@ -61,10 +61,8 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
 }
 
 - (BOOL)startHUD {
-    // 1. Tắt instance cũ nếu có
     [self stopHUD];
     
-    // 2. Thử chạy Daemon độc lập với Persona 99 (cho phép cảm ứng ngoài app/trong game 100%)
     BOOL spawned = [self spawnDaemonProcess];
     if (spawned) {
         _isHUDRunning = YES;
@@ -72,7 +70,6 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
         return YES;
     }
     
-    // 3. Fallback hiển thị cửa sổ trong app
     dispatch_async(dispatch_get_main_queue(), ^{
         [self showInAppWindow];
     });
@@ -168,7 +165,6 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
 }
 
 - (void)stopHUD {
-    // 1. Dừng daemon nếu đang chạy
     NSString *pidString = [NSString stringWithContentsOfFile:kPIDFilePath encoding:NSUTF8StringEncoding error:nil];
     if (pidString) {
         pid_t pid = (pid_t)[pidString intValue];
@@ -182,7 +178,6 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
         _daemonPid = 0;
     }
     
-    // 2. Dừng in-app window
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self->_inAppHUDWindow) {
             self->_inAppHUDWindow.hidden = YES;
@@ -203,9 +198,16 @@ static NSString * const kPIDFilePath = @"/tmp/fakelag_hud.pid";
     }
 }
 
-- (void)toggleOrientation {
+- (void)resetHUDPositions {
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_X_0"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_Y_0"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_X_1"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_Y_1"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_X_2"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"HUD_Pill_Y_2"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
     if (_inAppHUDVC) {
-        [_inAppHUDVC toggleOrientationModeAnimated:YES];
+        [_inAppHUDVC refreshAllToggleStates];
     }
 }
 
