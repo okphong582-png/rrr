@@ -324,10 +324,8 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
     
     void (^rotationChanges)(void) = ^{
         if (landscape) {
-            // Xoay ngang 90 độ cho góc nhìn game nằm ngang
             self.transform = CGAffineTransformMakeRotation(M_PI_2);
         } else {
-            // Trở về góc dọc đứng 0 độ
             self.transform = CGAffineTransformIdentity;
         }
     };
@@ -442,8 +440,8 @@ static NSString * const kSavedHUDOrientation = @"HUD_Panel_IsLandscape";
 
 // === XỬ LÝ CẢM ỨNG TOÀN CẦU NGOÀI APP (TROLLSPEED BACKBOARD ENGINE) ===
 - (BOOL)handleGlobalTouchDownAtPoint:(CGPoint)pt {
-    CGRect frameInWindow = self.frame;
-    if (!CGRectContainsPoint(frameInWindow, pt)) {
+    CGPoint localPt = [self convertPoint:pt fromView:self.window];
+    if (!CGRectContainsPoint(self.bounds, localPt)) {
         return NO;
     }
     _isTrackingGlobalTouch = YES;
